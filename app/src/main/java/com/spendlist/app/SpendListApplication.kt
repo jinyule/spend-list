@@ -15,18 +15,19 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @HiltAndroidApp
-class SpendListApplication : Application(), Configuration.Provider {
+class SpendListApplication : Application() {
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
-    override val workManagerConfiguration: Configuration
-        get() = Configuration.Builder()
-            .setWorkerFactory(workerFactory)
-            .build()
-
     override fun onCreate() {
         super.onCreate()
+        // Manually initialize WorkManager with HiltWorkerFactory
+        val config = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build()
+        WorkManager.initialize(this, config)
+
         createNotificationChannel()
         scheduleWorkers()
     }
