@@ -9,6 +9,8 @@
 
     <!-- Home Screen -->
     <string name="home_total_spend">总花费</string>
+    <string name="home_monthly_spend">月总花费</string>
+    <string name="home_cumulative_spend">累计花费</string>
     <string name="home_per_month">/月</string>
     <string name="home_per_year">/年</string>
     <string name="home_filter_all">全部</string>
@@ -125,4 +127,10 @@
     <string name="confirm_delete_title">删除订阅</string>
     <string name="confirm_delete_message">确定要删除「%s」吗？</string>
     <string name="action_confirm">确认</string>
+
+    <!-- Renewal -->
+    <string name="action_renew">续约</string>
+    <string name="renewal_history">续约记录</string>
+    <string name="renewal_count">已续约 %d 次</string>
+    <string name="renewal_date_change">%1$s → %2$s</string>
 </resources>

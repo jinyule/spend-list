@@ -17,6 +17,8 @@ import javax.inject.Inject
 data class SettingsUiState(
     val primaryCurrency: Currency = Currency.CNY,
     val reminderEnabled: Boolean = true,
+    val themeMode: Int = 0, // 0=System, 1=Light, 2=Dark
+    val reminderDays: Set<Int> = setOf(3, 1, 0), // days before renewal
     val isSyncingRates: Boolean = false,
     val rateSyncMessage: String? = null,
     val exportedData: String? = null,
@@ -46,6 +48,16 @@ class SettingsViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(reminderEnabled = enabled)
             }
         }
+        viewModelScope.launch {
+            userPreferences.themeMode.collect { mode ->
+                _uiState.value = _uiState.value.copy(themeMode = mode)
+            }
+        }
+        viewModelScope.launch {
+            userPreferences.reminderDays.collect { days ->
+                _uiState.value = _uiState.value.copy(reminderDays = days)
+            }
+        }
     }
 
     fun onPrimaryCurrencyChanged(currency: Currency) {
@@ -57,6 +69,18 @@ class SettingsViewModel @Inject constructor(
     fun onReminderEnabledChanged(enabled: Boolean) {
         viewModelScope.launch {
             userPreferences.setReminderEnabled(enabled)
+        }
+    }
+
+    fun onThemeModeChanged(mode: Int) {
+        viewModelScope.launch {
+            userPreferences.setThemeMode(mode)
+        }
+    }
+
+    fun onReminderDaysChanged(days: Set<Int>) {
+        viewModelScope.launch {
+            userPreferences.setReminderDays(days)
         }
     }
 

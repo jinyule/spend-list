@@ -8,13 +8,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material3.Button
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,11 +29,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,7 +51,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.spendlist.app.R
+import com.spendlist.app.domain.model.Category
 import com.spendlist.app.domain.model.Currency
+import com.spendlist.app.ui.component.getIconByName
+import com.spendlist.app.ui.component.resolvedCategoryName
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,6 +67,8 @@ fun AddEditScreen(
     viewModel: AddEditViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showIconPicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.navigateBack.collect { onNavigateBack() }
@@ -85,14 +101,40 @@ fun AddEditScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Name
-            OutlinedTextField(
-                value = uiState.name,
-                onValueChange = viewModel::onNameChange,
-                label = { Text(stringResource(R.string.field_name)) },
-                isError = uiState.nameError != null,
-                supportingText = uiState.nameError?.let { { Text(it) } },
-                singleLine = true,
+            // Icon + Name
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Icon preview
+                val iconUriValue = uiState.iconUri
+                Icon(
+                    imageVector = if (iconUriValue != null) getIconByName(iconUriValue)
+                    else Icons.Default.Face,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                OutlinedButton(onClick = { showIconPicker = true }) {
+                    Text(stringResource(R.string.field_icon))
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                OutlinedTextField(
+                    value = uiState.name,
+                    onValueChange = viewModel::onNameChange,
+                    label = { Text(stringResource(R.string.field_name)) },
+                    isError = uiState.nameError != null,
+                    supportingText = uiState.nameError?.let { { Text(it) } },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // Category Dropdown
+            CategoryDropdown(
+                categories = uiState.categories,
+                selectedId = uiState.categoryId,
+                onSelect = viewModel::onCategoryChange,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -155,13 +197,18 @@ fun AddEditScreen(
                 )
             }
 
-            // Start Date (display only for now)
+            // Start Date with DatePicker
             OutlinedTextField(
                 value = uiState.startDate.format(DateTimeFormatter.ISO_LOCAL_DATE),
                 onValueChange = {},
                 label = { Text(stringResource(R.string.field_start_date)) },
                 readOnly = true,
                 singleLine = true,
+                trailingIcon = {
+                    IconButton(onClick = { showDatePicker = true }) {
+                        Icon(Icons.Default.CalendarMonth, contentDescription = "Select date")
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -207,6 +254,63 @@ fun AddEditScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
         }
+
+        // DatePicker Dialog
+        if (showDatePicker) {
+            val datePickerState = rememberDatePickerState(
+                initialSelectedDateMillis = uiState.startDate
+                    .atStartOfDay(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli()
+            )
+            DatePickerDialog(
+                onDismissRequest = { showDatePicker = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            datePickerState.selectedDateMillis?.let { millis ->
+                                val date = Instant.ofEpochMilli(millis)
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate()
+                                viewModel.onStartDateChange(date)
+                            }
+                            showDatePicker = false
+                        }
+                    ) {
+                        Text(stringResource(R.string.action_confirm))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDatePicker = false }) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
+                }
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
+
+        // Icon Picker Dialog
+        if (showIconPicker) {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { showIconPicker = false },
+                title = { Text(stringResource(R.string.field_icon)) },
+                text = {
+                    com.spendlist.app.ui.component.IconPicker(
+                        selectedIconName = uiState.iconUri ?: "Face",
+                        onIconSelected = { iconName ->
+                            viewModel.onIconChange(iconName)
+                        },
+                        modifier = Modifier.height(200.dp)
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = { showIconPicker = false }) {
+                        Text(stringResource(R.string.action_confirm))
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -242,6 +346,75 @@ private fun CurrencyDropdown(
                     text = { Text("${currency.symbol} ${currency.code}") },
                     onClick = {
                         onSelect(currency)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CategoryDropdown(
+    categories: List<Category>,
+    selectedId: Long?,
+    onSelect: (Long?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selectedCategory = categories.find { it.id == selectedId }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            value = selectedCategory?.let { resolvedCategoryName(it) }
+                ?: stringResource(R.string.home_filter_all),
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(stringResource(R.string.field_category)) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            leadingIcon = {
+                if (selectedCategory != null) {
+                    Icon(
+                        imageVector = getIconByName(selectedCategory.iconName),
+                        contentDescription = null
+                    )
+                }
+            },
+            singleLine = true,
+            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable)
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            // "All" / None option
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.home_filter_all)) },
+                onClick = {
+                    onSelect(null)
+                    expanded = false
+                }
+            )
+            categories.forEach { category ->
+                DropdownMenuItem(
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = getIconByName(category.iconName),
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(resolvedCategoryName(category))
+                        }
+                    },
+                    onClick = {
+                        onSelect(category.id)
                         expanded = false
                     }
                 )

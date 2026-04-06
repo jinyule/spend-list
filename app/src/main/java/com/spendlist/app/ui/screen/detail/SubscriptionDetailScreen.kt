@@ -19,7 +19,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -49,8 +51,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.spendlist.app.R
 import com.spendlist.app.domain.model.BillingCycle
+import com.spendlist.app.domain.model.RenewalHistory
 import com.spendlist.app.domain.model.Subscription
 import com.spendlist.app.domain.model.SubscriptionStatus
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -102,7 +106,10 @@ fun SubscriptionDetailScreen(
             else -> {
                 DetailContent(
                     subscription = uiState.subscription!!,
+                    renewalHistory = uiState.renewalHistory,
+                    renewalCount = uiState.renewalCount,
                     onMarkCancelled = viewModel::onMarkCancelled,
+                    onRenew = viewModel::onRenew,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding)
@@ -138,10 +145,14 @@ fun SubscriptionDetailScreen(
 @Composable
 private fun DetailContent(
     subscription: Subscription,
+    renewalHistory: List<RenewalHistory>,
+    renewalCount: Int,
     onMarkCancelled: () -> Unit,
+    onRenew: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
 
     Column(
         modifier = modifier
@@ -255,9 +266,57 @@ private fun DetailContent(
             }
         }
 
-        // Mark as cancelled button
+        // Renewal History
+        if (renewalHistory.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = stringResource(R.string.renewal_history),
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.renewal_count, renewalCount),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    renewalHistory.take(5).forEach { history ->
+                        Text(
+                            text = stringResource(
+                                R.string.renewal_date_change,
+                                history.previousRenewalDate.format(dateFormatter),
+                                history.newRenewalDate.format(dateFormatter)
+                            ),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+        }
+
+        // Action buttons
         if (subscription.status == SubscriptionStatus.ACTIVE) {
             Spacer(modifier = Modifier.height(24.dp))
+
+            // Renew button
+            Button(
+                onClick = onRenew,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    Icons.Default.Refresh,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.size(8.dp))
+                Text(stringResource(R.string.action_renew))
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Mark as cancelled button
             OutlinedButton(
                 onClick = onMarkCancelled,
                 modifier = Modifier.fillMaxWidth()

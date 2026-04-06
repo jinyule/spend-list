@@ -3,12 +3,15 @@ package com.spendlist.app.data.local
 import android.content.Context
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.spendlist.app.data.local.dao.CategoryDao
 import com.spendlist.app.data.local.dao.CurrencyRateDao
+import com.spendlist.app.data.local.dao.RenewalHistoryDao
 import com.spendlist.app.data.local.dao.SubscriptionDao
 import com.spendlist.app.data.local.entity.CategoryEntity
 import com.spendlist.app.data.local.entity.CurrencyRateEntity
+import com.spendlist.app.data.local.entity.RenewalHistoryEntity
 import com.spendlist.app.data.local.entity.SubscriptionEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,15 +21,17 @@ import kotlinx.coroutines.launch
     entities = [
         SubscriptionEntity::class,
         CategoryEntity::class,
-        CurrencyRateEntity::class
+        CurrencyRateEntity::class,
+        RenewalHistoryEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 abstract class SpendListDatabase : RoomDatabase() {
     abstract fun subscriptionDao(): SubscriptionDao
     abstract fun categoryDao(): CategoryDao
     abstract fun currencyRateDao(): CurrencyRateDao
+    abstract fun renewalHistoryDao(): RenewalHistoryDao
 
     class SeedCallback(private val context: Context) : Callback() {
         override fun onCreate(db: SupportSQLiteDatabase) {
@@ -50,6 +55,26 @@ abstract class SpendListDatabase : RoomDatabase() {
     }
 
     companion object {
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS renewal_history (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        subscription_id INTEGER NOT NULL,
+                        previous_renewal_date INTEGER NOT NULL,
+                        new_renewal_date INTEGER NOT NULL,
+                        amount TEXT,
+                        note TEXT,
+                        renewed_at INTEGER NOT NULL,
+                        FOREIGN KEY(subscription_id) REFERENCES subscriptions(id) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    CREATE INDEX IF NOT EXISTS index_renewal_history_subscription_id ON renewal_history(subscription_id)
+                """.trimIndent())
+            }
+        }
+
         val PRESET_CATEGORIES = listOf(
             CategoryEntity(
                 name = "AI Tools", nameResKey = "category_ai",

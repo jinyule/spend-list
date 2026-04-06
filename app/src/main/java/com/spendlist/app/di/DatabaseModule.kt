@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.spendlist.app.data.local.SpendListDatabase
 import com.spendlist.app.data.local.dao.CategoryDao
 import com.spendlist.app.data.local.dao.CurrencyRateDao
+import com.spendlist.app.data.local.dao.RenewalHistoryDao
 import com.spendlist.app.data.local.dao.SubscriptionDao
 import dagger.Module
 import dagger.Provides
@@ -26,6 +27,7 @@ object DatabaseModule {
             "spend_list.db"
         )
             .addCallback(SpendListDatabase.SeedCallback(context))
+            .addMigrations(SpendListDatabase.MIGRATION_1_2)
             .build()
     }
 
@@ -42,5 +44,10 @@ object DatabaseModule {
     @Provides
     fun provideCurrencyRateDao(database: SpendListDatabase): CurrencyRateDao {
         return database.currencyRateDao()
+    }
+
+    @Provides
+    fun provideRenewalHistoryDao(database: SpendListDatabase): RenewalHistoryDao {
+        return database.renewalHistoryDao()
     }
 }

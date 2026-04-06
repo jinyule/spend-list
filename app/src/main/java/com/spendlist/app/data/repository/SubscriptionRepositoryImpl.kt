@@ -22,6 +22,10 @@ class SubscriptionRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getAllOnce(): List<Subscription> {
+        return subscriptionDao.getAllOnce().map { it.toDomain() }
+    }
+
     override fun getByStatus(status: SubscriptionStatus): Flow<List<Subscription>> {
         return subscriptionDao.getByStatusFlow(status.name).map { entities ->
             entities.map { it.toDomain() }

@@ -1,6 +1,7 @@
 package com.spendlist.app.ui.screen.home
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -19,6 +21,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -38,6 +41,7 @@ import com.spendlist.app.R
 import com.spendlist.app.domain.model.Category
 import com.spendlist.app.domain.model.Currency
 import com.spendlist.app.domain.model.SubscriptionStatus
+import com.spendlist.app.ui.component.DraggableFloatingActionButton
 import com.spendlist.app.ui.component.SubscriptionCard
 import com.spendlist.app.ui.component.resolvedCategoryName
 import java.math.BigDecimal
@@ -53,9 +57,12 @@ fun HomeScreen(
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(onClick = onAddClick) {
-                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_subscription))
-            }
+            DraggableFloatingActionButton(
+                onClick = onAddClick,
+                content = {
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_subscription))
+                }
+            )
         }
     ) { innerPadding ->
         Column(
@@ -68,6 +75,7 @@ fun HomeScreen(
                 subscriptions = uiState.subscriptions,
                 primaryCurrency = uiState.primaryCurrency,
                 totalMonthlySpend = uiState.totalMonthlySpend,
+                totalSpent = uiState.totalSpent,
                 modifier = Modifier.padding(16.dp)
             )
 
@@ -115,7 +123,9 @@ fun HomeScreen(
                         ) { subscription ->
                             SubscriptionCard(
                                 subscription = subscription,
-                                onClick = { onSubscriptionClick(subscription.id) }
+                                onClick = { onSubscriptionClick(subscription.id) },
+                                convertedAmount = uiState.convertedAmounts[subscription.id],
+                                primaryCurrency = uiState.primaryCurrency
                             )
                         }
                     }
@@ -130,6 +140,7 @@ private fun TotalSpendCard(
     subscriptions: List<com.spendlist.app.domain.model.Subscription>,
     primaryCurrency: Currency,
     totalMonthlySpend: BigDecimal?,
+    totalSpent: BigDecimal?,
     modifier: Modifier = Modifier
 ) {
     val activeCount = subscriptions.count { it.status == SubscriptionStatus.ACTIVE }
@@ -141,27 +152,72 @@ private fun TotalSpendCard(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         )
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text(
-                text = stringResource(R.string.home_total_spend),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            if (totalMonthlySpend != null) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            // Monthly spend
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = "${primaryCurrency.symbol}${formatter.format(totalMonthlySpend)}${stringResource(R.string.home_per_month)}",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
+                    text = stringResource(R.string.home_monthly_spend),
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
+                Spacer(modifier = Modifier.height(4.dp))
+                if (totalMonthlySpend != null) {
+                    Text(
+                        text = "${primaryCurrency.symbol}${formatter.format(totalMonthlySpend)}",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Text(
+                        text = stringResource(R.string.home_per_month),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
-            Text(
-                text = "$activeCount ${stringResource(R.string.status_active)}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+
+            // Divider
+            Box(
+                modifier = Modifier
+                    .height(60.dp)
+                    .width(1.dp)
+                    .padding(vertical = 8.dp)
+                    .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f))
             )
+
+            // Cumulative spend
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = stringResource(R.string.home_cumulative_spend),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                if (totalSpent != null) {
+                    Text(
+                        text = "${primaryCurrency.symbol}${formatter.format(totalSpent)}",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
         }
+
+        // Active count at bottom
+        Text(
+            text = "$activeCount ${stringResource(R.string.status_active)}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier
+                .padding(bottom = 12.dp)
+                .align(Alignment.CenterHorizontally)
+        )
     }
 }
 

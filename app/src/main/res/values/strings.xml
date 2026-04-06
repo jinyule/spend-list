@@ -9,6 +9,8 @@
 
     <!-- Home Screen -->
     <string name="home_total_spend">Total Spending</string>
+    <string name="home_monthly_spend">Monthly Spend</string>
+    <string name="home_cumulative_spend">Cumulative Spend</string>
     <string name="home_per_month">/mo</string>
     <string name="home_per_year">/yr</string>
     <string name="home_filter_all">All</string>
@@ -125,4 +127,10 @@
     <string name="confirm_delete_title">Delete Subscription</string>
     <string name="confirm_delete_message">Are you sure you want to delete \"%s\"?</string>
     <string name="action_confirm">Confirm</string>
+
+    <!-- Renewal -->
+    <string name="action_renew">Renew</string>
+    <string name="renewal_history">Renewal History</string>
+    <string name="renewal_count">Renewed %d times</string>
+    <string name="renewal_date_change">%1$s → %2$s</string>
 </resources>

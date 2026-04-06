@@ -6,23 +6,32 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.datastore.preferences.core.Preferences
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.spendlist.app.data.datastore.UserPreferences
 import com.spendlist.app.ui.navigation.BottomNavBar
 import com.spendlist.app.ui.navigation.Screen
 import com.spendlist.app.ui.navigation.SpendListNavHost
 import com.spendlist.app.ui.theme.SpendListTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var userPreferences: UserPreferences
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            SpendListTheme {
+            val themeMode by userPreferences.themeMode.collectAsState(initial = 0)
+
+            SpendListTheme(themeMode = themeMode) {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route

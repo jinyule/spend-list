@@ -14,6 +14,7 @@ import javax.inject.Inject
 data class CategorySpending(
     val categoryId: Long?,
     val categoryName: String,
+    val categoryNameResKey: String?, // For i18n
     val color: Long,
     val amount: BigDecimal,
     val percentage: Float
@@ -61,6 +62,7 @@ class GetSpendingByCategoryUseCase @Inject constructor(
                 CategorySpending(
                     categoryId = catId,
                     categoryName = cat?.name ?: "Other",
+                    categoryNameResKey = cat?.nameResKey,
                     color = cat?.color ?: 0xFF95A5A6,
                     amount = amount,
                     percentage = pct

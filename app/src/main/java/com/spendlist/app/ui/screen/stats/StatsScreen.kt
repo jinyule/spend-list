@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -17,6 +18,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.spendlist.app.R
 import com.spendlist.app.ui.component.*
 import java.text.DecimalFormat
+
+@Composable
+private fun resolvedCategoryName(name: String, nameResKey: String?): String {
+    if (nameResKey == null) return name
+    val context = LocalContext.current
+    val resId = context.resources.getIdentifier(nameResKey, "string", context.packageName)
+    return if (resId != 0) context.getString(resId) else name
+}
 
 @Composable
 fun StatsScreen(
@@ -82,7 +91,7 @@ private fun CategoryTab(uiState: StatsUiState) {
             DonutChart(
                 entries = uiState.categorySpending.map { spending ->
                     DonutChartEntry(
-                        label = spending.categoryName,
+                        label = resolvedCategoryName(spending.categoryName, spending.categoryNameResKey),
                         value = spending.amount.toFloat(),
                         color = Color(spending.color)
                     )
@@ -106,7 +115,7 @@ private fun CategoryTab(uiState: StatsUiState) {
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = spending.categoryName,
+                    text = resolvedCategoryName(spending.categoryName, spending.categoryNameResKey),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.weight(1f)
                 )
@@ -165,7 +174,7 @@ private fun CompareTab(uiState: StatsUiState) {
         SimpleBarChart(
             entries = uiState.categorySpending.map { spending ->
                 BarChartEntry(
-                    label = spending.categoryName,
+                    label = resolvedCategoryName(spending.categoryName, spending.categoryNameResKey),
                     value = spending.amount.toFloat(),
                     color = Color(spending.color)
                 )

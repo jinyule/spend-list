@@ -15,7 +15,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.spendlist.app.R
 import com.spendlist.app.domain.model.Currency
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     onCategoryManageClick: () -> Unit,
@@ -25,6 +25,7 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showCurrencyPicker by remember { mutableStateOf(false) }
+    var showThemeDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -58,6 +59,26 @@ fun SettingsScreen(
                 },
                 modifier = Modifier.clickable { showCurrencyPicker = true }
             )
+
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+
+            // Theme
+            val themeLabel = when (uiState.themeMode) {
+                1 -> stringResource(R.string.settings_theme_light)
+                2 -> stringResource(R.string.settings_theme_dark)
+                else -> stringResource(R.string.settings_theme_system)
+            }
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_theme)) },
+                supportingContent = { Text(themeLabel) },
+                leadingContent = {
+                    Icon(Icons.Default.Palette, contentDescription = null)
+                },
+                trailingContent = {
+                    Icon(Icons.Default.ChevronRight, contentDescription = null)
+                },
+                modifier = Modifier.clickable { showThemeDialog = true }
+            )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -83,6 +104,43 @@ fun SettingsScreen(
                     )
                 }
             )
+
+            // Reminder Days (only show when enabled)
+            if (uiState.reminderEnabled) {
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    Text(
+                        text = "Remind me:",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf(3, 1, 0).forEach { days ->
+                            val label = when (days) {
+                                3 -> stringResource(R.string.settings_remind_3days)
+                                1 -> stringResource(R.string.settings_remind_1day)
+                                else -> stringResource(R.string.settings_remind_today)
+                            }
+                            FilterChip(
+                                selected = uiState.reminderDays.contains(days),
+                                onClick = {
+                                    val currentDays = uiState.reminderDays.toMutableSet()
+                                    if (currentDays.contains(days)) {
+                                        currentDays.remove(days)
+                                    } else {
+                                        currentDays.add(days)
+                                    }
+                                    viewModel.onReminderDaysChanged(currentDays)
+                                },
+                                label = { Text(label) }
+                            )
+                        }
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -245,6 +303,45 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showCurrencyPicker = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    // Theme picker dialog
+    if (showThemeDialog) {
+        AlertDialog(
+            onDismissRequest = { showThemeDialog = false },
+            title = { Text(stringResource(R.string.settings_theme)) },
+            text = {
+                Column {
+                    listOf(
+                        0 to R.string.settings_theme_system,
+                        1 to R.string.settings_theme_light,
+                        2 to R.string.settings_theme_dark
+                    ).forEach { (mode, labelRes) ->
+                        ListItem(
+                            headlineContent = { Text(stringResource(labelRes)) },
+                            leadingContent = {
+                                RadioButton(
+                                    selected = uiState.themeMode == mode,
+                                    onClick = {
+                                        viewModel.onThemeModeChanged(mode)
+                                        showThemeDialog = false
+                                    }
+                                )
+                            },
+                            modifier = Modifier.clickable {
+                                viewModel.onThemeModeChanged(mode)
+                                showThemeDialog = false
+                            }
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showThemeDialog = false }) {
                     Text(stringResource(R.string.action_cancel))
                 }
             }

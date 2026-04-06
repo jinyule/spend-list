@@ -24,9 +24,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.spendlist.app.R
 import com.spendlist.app.domain.model.BillingCycle
+import com.spendlist.app.domain.model.Currency
 import com.spendlist.app.domain.model.Subscription
 import com.spendlist.app.domain.model.SubscriptionStatus
 import com.spendlist.app.ui.theme.StatusColors
+import java.math.BigDecimal
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -34,6 +36,8 @@ import java.time.format.FormatStyle
 fun SubscriptionCard(
     subscription: Subscription,
     onClick: () -> Unit,
+    convertedAmount: BigDecimal? = null,
+    primaryCurrency: Currency? = null,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -85,8 +89,16 @@ fun SubscriptionCard(
 
             // Amount + status
             Column(horizontalAlignment = Alignment.End) {
+                val displayAmount = convertedAmount ?: subscription.amount
+                val displayCurrency = primaryCurrency ?: subscription.currency
+                // When converted, amount is monthly average, so always show "/mo"
+                val suffix = if (convertedAmount != null) {
+                    stringResource(R.string.home_per_month)
+                } else {
+                    formatCycleSuffix(subscription.billingCycle)
+                }
                 Text(
-                    text = "${subscription.currency.symbol}${subscription.amount}${formatCycleSuffix(subscription.billingCycle)}",
+                    text = "${displayCurrency.symbol}${formatAmount(displayAmount)}$suffix",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -131,4 +143,9 @@ private fun formatCycleSuffix(cycle: BillingCycle): String {
         is BillingCycle.Yearly -> stringResource(R.string.home_per_year)
         is BillingCycle.Custom -> "/${cycle.days}d"
     }
+}
+
+private fun formatAmount(amount: BigDecimal): String {
+    return if (amount.scale() <= 2) amount.toPlainString()
+    else amount.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString()
 }

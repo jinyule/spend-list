@@ -7,6 +7,7 @@ import com.spendlist.app.domain.model.BillingCycle
 import com.spendlist.app.domain.model.Currency
 import com.spendlist.app.domain.model.Subscription
 import com.spendlist.app.domain.model.SubscriptionStatus
+import com.spendlist.app.domain.repository.CategoryRepository
 import com.spendlist.app.domain.usecase.subscription.AddSubscriptionUseCase
 import com.spendlist.app.domain.usecase.subscription.GetSubscriptionByIdUseCase
 import com.spendlist.app.domain.usecase.subscription.UpdateSubscriptionUseCase
@@ -14,6 +15,7 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -31,6 +33,7 @@ class AddEditViewModelTest {
     private lateinit var addSubscription: AddSubscriptionUseCase
     private lateinit var updateSubscription: UpdateSubscriptionUseCase
     private lateinit var getSubscriptionById: GetSubscriptionByIdUseCase
+    private lateinit var categoryRepository: CategoryRepository
 
     @Before
     fun setup() {
@@ -38,6 +41,8 @@ class AddEditViewModelTest {
         addSubscription = mockk()
         updateSubscription = mockk()
         getSubscriptionById = mockk()
+        categoryRepository = mockk()
+        coEvery { categoryRepository.getAll() } returns flowOf(emptyList())
     }
 
     @After
@@ -49,7 +54,7 @@ class AddEditViewModelTest {
         val savedStateHandle = SavedStateHandle().apply {
             subscriptionId?.let { set("id", it) }
         }
-        return AddEditViewModel(savedStateHandle, addSubscription, updateSubscription, getSubscriptionById)
+        return AddEditViewModel(savedStateHandle, addSubscription, updateSubscription, getSubscriptionById, categoryRepository)
     }
 
     @Test

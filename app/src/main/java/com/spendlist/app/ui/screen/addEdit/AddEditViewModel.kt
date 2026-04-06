@@ -4,9 +4,11 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.spendlist.app.domain.model.BillingCycle
+import com.spendlist.app.domain.model.Category
 import com.spendlist.app.domain.model.Currency
 import com.spendlist.app.domain.model.Subscription
 import com.spendlist.app.domain.model.SubscriptionStatus
+import com.spendlist.app.domain.repository.CategoryRepository
 import com.spendlist.app.domain.usecase.subscription.AddSubscriptionUseCase
 import com.spendlist.app.domain.usecase.subscription.GetSubscriptionByIdUseCase
 import com.spendlist.app.domain.usecase.subscription.UpdateSubscriptionUseCase
@@ -27,6 +29,7 @@ data class AddEditUiState(
     val subscriptionId: Long? = null,
     val name: String = "",
     val categoryId: Long? = null,
+    val categories: List<Category> = emptyList(),
     val amount: String = "",
     val currency: Currency = Currency.CNY,
     val billingCycleType: String = "MONTHLY",
@@ -47,7 +50,8 @@ class AddEditViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val addSubscription: AddSubscriptionUseCase,
     private val updateSubscription: UpdateSubscriptionUseCase,
-    private val getSubscriptionById: GetSubscriptionByIdUseCase
+    private val getSubscriptionById: GetSubscriptionByIdUseCase,
+    private val categoryRepository: CategoryRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddEditUiState())
@@ -57,9 +61,18 @@ class AddEditViewModel @Inject constructor(
     val navigateBack: SharedFlow<Boolean> = _navigateBack.asSharedFlow()
 
     init {
+        loadCategories()
         val id = savedStateHandle.get<Long>("id")
         if (id != null) {
             loadSubscription(id)
+        }
+    }
+
+    private fun loadCategories() {
+        viewModelScope.launch {
+            categoryRepository.getAll().collect { categories ->
+                _uiState.value = _uiState.value.copy(categories = categories)
+            }
         }
     }
 

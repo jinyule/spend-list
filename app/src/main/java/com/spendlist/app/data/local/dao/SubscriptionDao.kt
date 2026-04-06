@@ -15,6 +15,9 @@ interface SubscriptionDao {
     @Query("SELECT * FROM subscriptions ORDER BY next_renewal_date ASC")
     fun getAllFlow(): Flow<List<SubscriptionEntity>>
 
+    @Query("SELECT * FROM subscriptions ORDER BY next_renewal_date ASC")
+    suspend fun getAllOnce(): List<SubscriptionEntity>
+
     @Query("SELECT * FROM subscriptions WHERE status = :status ORDER BY next_renewal_date ASC")
     fun getByStatusFlow(status: String): Flow<List<SubscriptionEntity>>
 

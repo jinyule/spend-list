@@ -11,8 +11,10 @@ import com.spendlist.app.domain.repository.CategoryRepository
 import com.spendlist.app.domain.usecase.currency.ConvertCurrencyUseCase
 import com.spendlist.app.domain.usecase.subscription.DeleteSubscriptionUseCase
 import com.spendlist.app.domain.usecase.subscription.GetSubscriptionsUseCase
+import com.spendlist.app.domain.usecase.subscription.GetTotalSpentUseCase
 import java.math.BigDecimal
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,11 +24,13 @@ import javax.inject.Inject
 
 data class HomeUiState(
     val subscriptions: List<Subscription> = emptyList(),
+    val convertedAmounts: Map<Long, BigDecimal> = emptyMap(), // subscriptionId -> converted amount
     val categories: List<Category> = emptyList(),
     val selectedCategoryId: Long? = null,
     val selectedStatus: SubscriptionStatus? = null,
     val primaryCurrency: Currency = Currency.CNY,
     val totalMonthlySpend: BigDecimal? = null,
+    val totalSpent: BigDecimal? = null, // Cumulative spent
     val isLoading: Boolean = true,
     val error: String? = null
 )
@@ -37,11 +41,16 @@ class HomeViewModel @Inject constructor(
     private val deleteSubscription: DeleteSubscriptionUseCase,
     private val categoryRepository: CategoryRepository,
     private val convertCurrency: ConvertCurrencyUseCase,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val getTotalSpent: GetTotalSpentUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    private var loadJob: Job? = null
+    private var currencyJob: Job? = null
+    private var categoryJob: Job? = null
 
     init {
         loadPrimaryCurrency()
@@ -50,7 +59,8 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun loadPrimaryCurrency() {
-        viewModelScope.launch {
+        currencyJob?.cancel()
+        currencyJob = viewModelScope.launch {
             userPreferences.primaryCurrencyCode.collect { code ->
                 val currency = Currency.fromCode(code) ?: Currency.CNY
                 _uiState.value = _uiState.value.copy(primaryCurrency = currency)
@@ -60,7 +70,8 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun loadCategories() {
-        viewModelScope.launch {
+        categoryJob?.cancel()
+        categoryJob = viewModelScope.launch {
             categoryRepository.getAll()
                 .collect { categories ->
                     _uiState.value = _uiState.value.copy(categories = categories)
@@ -69,7 +80,8 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun loadSubscriptions() {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             getSubscriptions(
                 categoryId = _uiState.value.selectedCategoryId,
                 status = _uiState.value.selectedStatus
@@ -96,28 +108,43 @@ class HomeViewModel @Inject constructor(
             val state = _uiState.value
             val activeSubscriptions = state.subscriptions.filter { it.status == SubscriptionStatus.ACTIVE }
             if (activeSubscriptions.isEmpty()) {
-                _uiState.value = state.copy(totalMonthlySpend = BigDecimal.ZERO)
+                _uiState.value = state.copy(
+                    totalMonthlySpend = BigDecimal.ZERO,
+                    totalSpent = BigDecimal.ZERO,
+                    convertedAmounts = emptyMap()
+                )
                 return@launch
             }
 
-            var total = BigDecimal.ZERO
-            for (sub in activeSubscriptions) {
+            var totalMonthly = BigDecimal.ZERO
+            val convertedAmounts = mutableMapOf<Long, BigDecimal>()
+
+            for (sub in state.subscriptions) {
                 val monthlyAmount = sub.monthlyAmount
-                if (sub.currency == state.primaryCurrency) {
-                    total = total.add(monthlyAmount)
+                val convertedAmount = if (sub.currency == state.primaryCurrency) {
+                    monthlyAmount
                 } else {
                     when (val result = convertCurrency(monthlyAmount, sub.currency, state.primaryCurrency)) {
-                        is ConvertCurrencyUseCase.Result.Success -> {
-                            total = total.add(result.amount)
-                        }
-                        is ConvertCurrencyUseCase.Result.NoRateAvailable -> {
-                            // Fall back to original amount if no rate
-                            total = total.add(monthlyAmount)
-                        }
+                        is ConvertCurrencyUseCase.Result.Success -> result.amount
+                        is ConvertCurrencyUseCase.Result.NoRateAvailable -> monthlyAmount
                     }
                 }
+                convertedAmounts[sub.id] = convertedAmount
+
+                // Only add active subscriptions to total
+                if (sub.status == SubscriptionStatus.ACTIVE) {
+                    totalMonthly = totalMonthly.add(convertedAmount)
+                }
             }
-            _uiState.value = _uiState.value.copy(totalMonthlySpend = total)
+
+            // Calculate cumulative spent
+            val cumulativeSpent = getTotalSpent(state.primaryCurrency)
+
+            _uiState.value = _uiState.value.copy(
+                totalMonthlySpend = totalMonthly,
+                totalSpent = cumulativeSpent,
+                convertedAmounts = convertedAmounts
+            )
         }
     }
 

@@ -24,10 +24,16 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun SpendListTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themeMode: Int = 0, // 0=System, 1=Light, 2=Dark
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    val darkTheme = when (themeMode) {
+        1 -> false // Light
+        2 -> true  // Dark
+        else -> isSystemInDarkTheme() // System
+    }
+
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
