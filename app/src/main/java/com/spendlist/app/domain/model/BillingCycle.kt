@@ -6,13 +6,21 @@ import java.time.temporal.ChronoUnit
 sealed class BillingCycle {
     data object Monthly : BillingCycle()
     data object Yearly : BillingCycle()
-    data class Custom(val days: Int) : BillingCycle()
+    data class Custom(val days: Int) : BillingCycle() {
+        init {
+            // Ensure days is at least 1 to avoid division by zero
+            require(days >= 1) { "Custom billing cycle days must be at least 1" }
+        }
+
+        // Safe days getter, returns at least 1
+        val safeDays: Int get() = if (days >= 1) days else 1
+    }
 
     fun calculateNextRenewalDate(fromDate: LocalDate): LocalDate {
         return when (this) {
             is Monthly -> fromDate.plusMonths(1)
             is Yearly -> fromDate.plusYears(1)
-            is Custom -> fromDate.plusDays(days.toLong())
+            is Custom -> fromDate.plusDays(safeDays.toLong())
         }
     }
 
@@ -20,7 +28,7 @@ sealed class BillingCycle {
         return when (this) {
             is Monthly -> 30
             is Yearly -> 365
-            is Custom -> days
+            is Custom -> safeDays
         }
     }
 
@@ -32,7 +40,7 @@ sealed class BillingCycle {
         return when (this) {
             is Monthly -> 1.0
             is Yearly -> 1.0 / 12.0
-            is Custom -> 30.0 / days.toDouble()
+            is Custom -> 30.0 / safeDays.toDouble()
         }
     }
 }

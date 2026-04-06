@@ -191,6 +191,8 @@ fun AddEditScreen(
                     value = uiState.customDays,
                     onValueChange = viewModel::onCustomDaysChange,
                     label = { Text(stringResource(R.string.cycle_custom)) },
+                    isError = uiState.customDaysError != null,
+                    supportingText = uiState.customDaysError?.let { { Text(it) } },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()

@@ -42,6 +42,7 @@ data class AddEditUiState(
     val status: SubscriptionStatus = SubscriptionStatus.ACTIVE,
     val nameError: String? = null,
     val amountError: String? = null,
+    val customDaysError: String? = null,
     val isSaving: Boolean = false
 )
 
@@ -123,7 +124,11 @@ class AddEditViewModel @Inject constructor(
     }
 
     fun onCustomDaysChange(days: String) {
-        _uiState.value = _uiState.value.copy(customDays = days)
+        val error = if (days.isNotBlank()) {
+            val daysInt = days.toIntOrNull()
+            if (daysInt == null || daysInt < 1) "Days must be at least 1" else null
+        } else null
+        _uiState.value = _uiState.value.copy(customDays = days, customDaysError = error)
         updateNextRenewalDate()
     }
 
@@ -183,6 +188,15 @@ class AddEditViewModel @Inject constructor(
         if (amount <= BigDecimal.ZERO) {
             _uiState.value = state.copy(amountError = "Amount must be greater than 0")
             return
+        }
+
+        // Validate custom days
+        if (state.billingCycleType == "CUSTOM") {
+            val customDaysInt = state.customDays.toIntOrNull()
+            if (customDaysInt == null || customDaysInt < 1) {
+                _uiState.value = state.copy(customDaysError = "Days must be at least 1")
+                return
+            }
         }
 
         _uiState.value = state.copy(isSaving = true)

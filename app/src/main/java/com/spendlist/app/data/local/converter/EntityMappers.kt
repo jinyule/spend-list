@@ -22,7 +22,7 @@ fun SubscriptionEntity.toDomain(): Subscription {
         billingCycle = when (billingCycleType) {
             "MONTHLY" -> BillingCycle.Monthly
             "YEARLY" -> BillingCycle.Yearly
-            "CUSTOM" -> BillingCycle.Custom(billingCycleDays ?: 30)
+            "CUSTOM" -> BillingCycle.Custom((billingCycleDays ?: 30).coerceAtLeast(1))
             else -> BillingCycle.Monthly
         },
         startDate = millisToLocalDate(startDate),

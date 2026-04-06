@@ -7,6 +7,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -21,6 +23,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.spendlist.app.R
 import com.spendlist.app.domain.model.Currency
+import com.spendlist.app.util.LocaleHelper
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -65,6 +68,7 @@ fun SettingsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
         Text(
@@ -428,12 +432,14 @@ fun SettingsScreen(
                                     selected = uiState.languageCode == code,
                                     onClick = {
                                         viewModel.onLanguageChanged(code)
+                                        LocaleHelper.setLocale(context, code)
                                         showLanguageDialog = false
                                     }
                                 )
                             },
                             modifier = Modifier.clickable {
                                 viewModel.onLanguageChanged(code)
+                                LocaleHelper.setLocale(context, code)
                                 showLanguageDialog = false
                             }
                         )
