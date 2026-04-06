@@ -76,3 +76,19 @@ f738849 fix: resolve language switch loop, custom days=0 crash, settings scroll 
 | Settings 滚动 | ✅ 可滚动查看导出功能 |
 | JSON 导出 | ✅ 正常 |
 | CSV 导出 | ✅ 正常 |
+| 到期提醒 | ✅ Worker 正常执行，通知显示 |
+
+---
+
+## 提醒功能测试方法
+
+通过 adb 发送测试广播触发提醒：
+
+```bash
+adb shell am broadcast -a com.spendlist.app.TEST_REMINDER -p com.spendlist.app
+```
+
+前置条件：
+1. Settings → 到期提醒 → 开启
+2. Android 13+ 需授予通知权限
+3. 存在 3 天内到期的订阅
