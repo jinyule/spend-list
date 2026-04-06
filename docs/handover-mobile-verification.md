@@ -1,10 +1,10 @@
 # 手机验证问题修复交接文档
 
-> 完成日期：2026-04-06
+> 完成日期：2026-04-06（更新：后续功能完善）
 
 ## 背景
 
-用户在手机上验证 App 后发现若干功能问题，本会话完成了以下修复和新功能开发。
+用户在手机上验证 App 后发现若干功能问题，本会话完成了以下修复和新功能开发，随后完成了剩余的四个功能任务。
 
 ## 关键决策
 
@@ -14,6 +14,9 @@
 | 汇率转换显示 | 只显示主币种金额 | 用户确认简洁方案 |
 | FAB 位置 | 可拖动 + 80% 透明度 | 防遮挡，用户可自定义位置 |
 | 累计花费计算 | startDate → nextRenewalDate | nextRenewalDate 是下一次未付费日期 |
+| 语言切换 | LocaleHelper 统一处理 API 33+/33- | API 33+ 用 LocaleManager，API <33 用 AppCompatDelegate |
+| 导入导出 | SAF ActivityResultLauncher 在 MainActivity | Compose 中 SAF 需在 Activity 级别注册 |
+| Release 签名 | keystore.properties 管理密钥 | 密钥文件不提交 Git，安全可控 |
 
 ## 新增功能
 
@@ -59,6 +62,29 @@
 - 新增 `DraggableFloatingActionButton` 组件
 - 80% 透明度背景
 - 支持 4 方向拖动，位置保持
+
+### 10. 语言设置（新增）
+- Settings 页面新增语言选项（跟随系统/中文/English）
+- UserPreferences 存储 `languageCode`
+- LocaleHelper 统一处理 API 33+ (LocaleManager) 和 API <33 (AppCompatDelegate)
+- MainActivity 使用 LaunchedEffect 监听语言变化并应用
+
+### 11. 导入导出 SAF（新增）
+- MainActivity 注册 CreateDocument 和 OpenDocument launcher
+- 通过 SpendListNavHost 传递回调给 SettingsScreen
+- JSON/CSV 导出通过系统文件选择器保存
+- 导入通过系统文件选择器打开
+
+### 12. 通知权限请求（新增）
+- Settings 开启提醒时检查 POST_NOTIFICATIONS 权限
+- Android 13+ 自动弹出权限请求对话框
+- 权限授予后才启用提醒功能
+
+### 13. Release 构建配置（新增）
+- keystore.properties 管理签名密钥（添加到 .gitignore）
+- keystore.properties.example 提供模板
+- build.gradle.kts 读取密钥配置 signingConfigs
+- 无 keystore.properties 时仍可正常构建 debug
 
 ## 修复问题
 
@@ -129,22 +155,36 @@ CREATE INDEX index_renewal_history_subscription_id ON renewal_history(subscripti
 ## Git 提交
 
 ```
+0e0787d feat: add language settings, SAF import/export, notification permission and release build config
+0e16596 docs: add handover document for mobile verification fixes
 7abe986 feat: add renewal, i18n, theme, currency conversion and cumulative spend
 7cc0476 fix: resolve build and runtime issues
 7b5c2b7 chore: initial commit
 ```
 
-## 已知限制
+## 功能完成状态
 
-| 功能 | 限制 |
+所有计划功能已完成：
+
+| 功能 | 状态 |
 |------|------|
-| 语言设置 | 未实现 App 内切换，需通过系统设置 |
-| 导入导出 | UseCase 完成，SAF 文件操作未集成 |
-| 通知权限 | 未实现运行时权限请求 UI |
+| 语言设置 | ✅ App 内切换已实现 |
+| 导入导出 | ✅ SAF 已集成 |
+| 通知权限 | ✅ Android 13+ 权限请求已实现 |
+| Release 构建 | ✅ keystore.properties 配置完成 |
 
-## 后续建议
+## Release 构建指南
 
-1. **语言设置**：实现 App 内语言切换（API 33+ 用 LocaleManager）
-2. **导入导出**：集成 Storage Access Framework
-3. **通知权限**：Android 13+ 请求 POST_NOTIFICATIONS 权限
-4. **Release 构建**：配置签名，启用代码混淆
+```bash
+# 1. 创建 keystore 文件
+keytool -genkey -v -keystore spendlist-release.keystore -alias spendlist -keyalg RSA -keysize 2048 -validity 10000
+
+# 2. 创建 keystore.properties（参考 keystore.properties.example）
+storeFile=spendlist-release.keystore
+storePassword=your_store_password
+keyAlias=spendlist
+keyPassword=your_key_password
+
+# 3. 构建 Release APK
+./gradlew assembleRelease
+```
