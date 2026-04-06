@@ -6,6 +6,7 @@ build/
 
 # Local Android/IDE config
 local.properties
+keystore.properties
 .idea/
 *.iml
 captures/

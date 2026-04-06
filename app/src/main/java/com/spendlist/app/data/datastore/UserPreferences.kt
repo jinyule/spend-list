@@ -21,6 +21,7 @@ class UserPreferences @Inject constructor(
         val REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
         val THEME_MODE = intPreferencesKey("theme_mode") // 0=System, 1=Light, 2=Dark
         val REMINDER_DAYS = stringSetPreferencesKey("reminder_days") // {"3", "1", "0"}
+        val LANGUAGE_CODE = stringPreferencesKey("language_code") // "" = System, "en", "zh-CN"
     }
 
     val primaryCurrencyCode: Flow<String> = dataStore.data.map { prefs ->
@@ -37,6 +38,10 @@ class UserPreferences @Inject constructor(
 
     val reminderDays: Flow<Set<Int>> = dataStore.data.map { prefs ->
         prefs[REMINDER_DAYS]?.mapNotNull { it.toIntOrNull() }?.toSet() ?: setOf(3, 1, 0)
+    }
+
+    val languageCode: Flow<String> = dataStore.data.map { prefs ->
+        prefs[LANGUAGE_CODE] ?: ""
     }
 
     suspend fun setPrimaryCurrency(code: String) {
@@ -60,6 +65,12 @@ class UserPreferences @Inject constructor(
     suspend fun setReminderDays(days: Set<Int>) {
         dataStore.edit { prefs ->
             prefs[REMINDER_DAYS] = days.map { it.toString() }.toSet()
+        }
+    }
+
+    suspend fun setLanguageCode(code: String) {
+        dataStore.edit { prefs ->
+            prefs[LANGUAGE_CODE] = code
         }
     }
 }

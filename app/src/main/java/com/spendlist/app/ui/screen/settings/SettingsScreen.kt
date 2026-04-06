@@ -1,5 +1,10 @@
 package com.spendlist.app.ui.screen.settings
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -8,8 +13,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.spendlist.app.R
@@ -26,6 +33,34 @@ fun SettingsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showCurrencyPicker by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+
+    // Notification permission launcher (Android 13+)
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            viewModel.onReminderEnabledChanged(true)
+        }
+    }
+
+    fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val permissionStatus = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            )
+            if (permissionStatus != PackageManager.PERMISSION_GRANTED) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                viewModel.onReminderEnabledChanged(true)
+            }
+        } else {
+            viewModel.onReminderEnabledChanged(true)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -79,6 +114,26 @@ fun SettingsScreen(
                 },
                 modifier = Modifier.clickable { showThemeDialog = true }
             )
+
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+
+            // Language
+            val languageLabel = when (uiState.languageCode) {
+                "en" -> stringResource(R.string.settings_language_en)
+                "zh-CN" -> stringResource(R.string.settings_language_zh)
+                else -> stringResource(R.string.settings_language_system)
+            }
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_language)) },
+                supportingContent = { Text(languageLabel) },
+                leadingContent = {
+                    Icon(Icons.Default.Language, contentDescription = null)
+                },
+                trailingContent = {
+                    Icon(Icons.Default.ChevronRight, contentDescription = null)
+                },
+                modifier = Modifier.clickable { showLanguageDialog = true }
+            )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -100,7 +155,13 @@ fun SettingsScreen(
                 trailingContent = {
                     Switch(
                         checked = uiState.reminderEnabled,
-                        onCheckedChange = { viewModel.onReminderEnabledChanged(it) }
+                        onCheckedChange = { enabled ->
+                            if (enabled) {
+                                requestNotificationPermissionIfNeeded()
+                            } else {
+                                viewModel.onReminderEnabledChanged(false)
+                            }
+                        }
                     )
                 }
             )
@@ -342,6 +403,45 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showThemeDialog = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    // Language picker dialog
+    if (showLanguageDialog) {
+        AlertDialog(
+            onDismissRequest = { showLanguageDialog = false },
+            title = { Text(stringResource(R.string.settings_language)) },
+            text = {
+                Column {
+                    listOf(
+                        "" to R.string.settings_language_system,
+                        "en" to R.string.settings_language_en,
+                        "zh-CN" to R.string.settings_language_zh
+                    ).forEach { (code, labelRes) ->
+                        ListItem(
+                            headlineContent = { Text(stringResource(labelRes)) },
+                            leadingContent = {
+                                RadioButton(
+                                    selected = uiState.languageCode == code,
+                                    onClick = {
+                                        viewModel.onLanguageChanged(code)
+                                        showLanguageDialog = false
+                                    }
+                                )
+                            },
+                            modifier = Modifier.clickable {
+                                viewModel.onLanguageChanged(code)
+                                showLanguageDialog = false
+                            }
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showLanguageDialog = false }) {
                     Text(stringResource(R.string.action_cancel))
                 }
             }

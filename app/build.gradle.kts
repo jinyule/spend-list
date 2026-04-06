@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +7,16 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+}
+
+// Load keystore properties for release builds
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties: Properties? = if (keystorePropertiesFile.exists()) {
+    Properties().apply {
+        load(keystorePropertiesFile.inputStream())
+    }
+} else {
+    null
 }
 
 android {
@@ -26,6 +38,17 @@ android {
         arg("room.schemaLocation", "$projectDir/schemas")
     }
 
+    signingConfigs {
+        keystoreProperties?.let { props ->
+            create("release") {
+                storeFile = file(props.getProperty("storeFile"))
+                storePassword = props.getProperty("storePassword")
+                keyAlias = props.getProperty("keyAlias")
+                keyPassword = props.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -34,6 +57,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            keystoreProperties?.let {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
@@ -55,6 +81,7 @@ dependencies {
     // Core
     implementation(libs.core.ktx)
     implementation(libs.kotlinx.coroutines)
+    implementation(libs.appcompat)
 
     // Compose
     val composeBom = platform(libs.compose.bom)

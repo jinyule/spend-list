@@ -17,7 +17,9 @@ import com.spendlist.app.ui.screen.stats.StatsScreen
 @Composable
 fun SpendListNavHost(
     navController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onExportData: (String, String) -> Unit = { _, _ -> },
+    onRequestImport: () -> Unit = {}
 ) {
     NavHost(
         navController = navController,
@@ -41,7 +43,9 @@ fun SpendListNavHost(
             SettingsScreen(
                 onCategoryManageClick = {
                     navController.navigate(Screen.CategoryManage.route)
-                }
+                },
+                onExportData = onExportData,
+                onRequestImport = onRequestImport
             )
         }
 

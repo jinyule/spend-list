@@ -85,6 +85,9 @@
     <string name="settings_theme_system">Follow System</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
+    <string name="settings_language_system">Follow System</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_language_zh">中文</string>
     <string name="settings_syncing_rates">Syncing exchange rates…</string>
     <string name="settings_rates_synced">Exchange rates synced successfully</string>
     <string name="settings_rates_sync_failed">Failed to sync exchange rates</string>

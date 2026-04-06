@@ -19,6 +19,7 @@ data class SettingsUiState(
     val reminderEnabled: Boolean = true,
     val themeMode: Int = 0, // 0=System, 1=Light, 2=Dark
     val reminderDays: Set<Int> = setOf(3, 1, 0), // days before renewal
+    val languageCode: String = "", // "" = System, "en", "zh-CN"
     val isSyncingRates: Boolean = false,
     val rateSyncMessage: String? = null,
     val exportedData: String? = null,
@@ -58,6 +59,11 @@ class SettingsViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(reminderDays = days)
             }
         }
+        viewModelScope.launch {
+            userPreferences.languageCode.collect { code ->
+                _uiState.value = _uiState.value.copy(languageCode = code)
+            }
+        }
     }
 
     fun onPrimaryCurrencyChanged(currency: Currency) {
@@ -81,6 +87,12 @@ class SettingsViewModel @Inject constructor(
     fun onReminderDaysChanged(days: Set<Int>) {
         viewModelScope.launch {
             userPreferences.setReminderDays(days)
+        }
+    }
+
+    fun onLanguageChanged(code: String) {
+        viewModelScope.launch {
+            userPreferences.setLanguageCode(code)
         }
     }
 
