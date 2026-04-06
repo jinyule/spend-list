@@ -1,0 +1,73 @@
+package com.spendlist.app
+
+import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import com.spendlist.app.worker.ExchangeRateSyncWorker
+import com.spendlist.app.worker.RenewalReminderWorker
+import dagger.hilt.android.HiltAndroidApp
+import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+
+@HiltAndroidApp
+class SpendListApplication : Application(), Configuration.Provider {
+
+    @Inject
+    lateinit var workerFactory: HiltWorkerFactory
+
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build()
+
+    override fun onCreate() {
+        super.onCreate()
+        createNotificationChannel()
+        scheduleWorkers()
+    }
+
+    private fun createNotificationChannel() {
+        val channel = NotificationChannel(
+            NOTIFICATION_CHANNEL_ID,
+            getString(R.string.notification_channel_name),
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = getString(R.string.notification_channel_desc)
+        }
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannel(channel)
+    }
+
+    private fun scheduleWorkers() {
+        val workManager = WorkManager.getInstance(this)
+
+        // Daily renewal reminder check
+        val reminderWork = PeriodicWorkRequestBuilder<RenewalReminderWorker>(
+            1, TimeUnit.DAYS
+        ).build()
+        workManager.enqueueUniquePeriodicWork(
+            RenewalReminderWorker.WORK_NAME,
+            ExistingPeriodicWorkPolicy.KEEP,
+            reminderWork
+        )
+
+        // Daily exchange rate sync
+        val rateSyncWork = PeriodicWorkRequestBuilder<ExchangeRateSyncWorker>(
+            1, TimeUnit.DAYS
+        ).build()
+        workManager.enqueueUniquePeriodicWork(
+            ExchangeRateSyncWorker.WORK_NAME,
+            ExistingPeriodicWorkPolicy.KEEP,
+            rateSyncWork
+        )
+    }
+
+    companion object {
+        const val NOTIFICATION_CHANNEL_ID = "renewal_reminders"
+    }
+}

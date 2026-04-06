@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Dollar sign icon for Spend List -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,24C37.43,24 24,37.43 24,54C24,70.57 37.43,84 54,84C70.57,84 84,70.57 84,54C84,37.43 70.57,24 54,24ZM56,72V75H52V72C46.48,72 42,67.52 42,62H47C47,64.76 49.24,67 52,67H56C58.76,67 61,64.76 61,62C61,59.24 58.76,57 56,57H52C46.48,57 42,52.52 42,47C42,41.48 46.48,37 52,37V34H56V37C61.52,37 66,41.48 66,47H61C61,44.24 58.76,42 56,42H52C49.24,42 47,44.24 47,47C47,49.76 49.24,52 52,52H56C61.52,52 66,56.48 66,62C66,67.52 61.52,72 56,72Z" />
+</vector>

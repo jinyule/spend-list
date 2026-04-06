@@ -1,0 +1,27 @@
+# Gradle and Kotlin caches
+.gradle/
+.kotlin/
+build/
+*/build/
+
+# Local Android/IDE config
+local.properties
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Local agent/tooling files
+.agents/
+.claude/
+skills-lock.json
+.worktrees/
+worktrees/
+
+# Local session and scratch files
+*-this-session-is-being-continued-from-a-previous-*.txt
+
+# OS noise
+.DS_Store
+Thumbs.db

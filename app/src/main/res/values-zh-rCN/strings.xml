@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">氪金清单</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_home">首页</string>
+    <string name="nav_stats">统计</string>
+    <string name="nav_settings">设置</string>
+
+    <!-- Home Screen -->
+    <string name="home_total_spend">总花费</string>
+    <string name="home_per_month">/月</string>
+    <string name="home_per_year">/年</string>
+    <string name="home_filter_all">全部</string>
+    <string name="home_upcoming_renewals">即将到期</string>
+    <string name="home_empty_title">暂无订阅</string>
+    <string name="home_empty_subtitle">点击 + 添加你的第一个订阅</string>
+
+    <!-- Subscription Status -->
+    <string name="status_active">活跃</string>
+    <string name="status_cancelled">已取消</string>
+    <string name="status_expired">已过期</string>
+
+    <!-- Billing Cycle -->
+    <string name="cycle_monthly">月付</string>
+    <string name="cycle_yearly">年付</string>
+    <string name="cycle_custom">自定义</string>
+    <string name="cycle_days">%d 天</string>
+
+    <!-- Add/Edit Screen -->
+    <string name="add_subscription">新增订阅</string>
+    <string name="edit_subscription">编辑订阅</string>
+    <string name="field_name">订阅名称</string>
+    <string name="field_category">分类</string>
+    <string name="field_amount">金额</string>
+    <string name="field_currency">币种</string>
+    <string name="field_billing_cycle">计费周期</string>
+    <string name="field_start_date">开始日期</string>
+    <string name="field_next_renewal">下次续费日</string>
+    <string name="field_icon">图标</string>
+    <string name="field_manage_url">管理链接（可选）</string>
+    <string name="field_note">备注（可选）</string>
+    <string name="action_save">保存</string>
+    <string name="action_cancel">取消</string>
+    <string name="action_delete">删除</string>
+    <string name="action_edit">编辑</string>
+    <string name="action_mark_cancelled">标记为已取消</string>
+
+    <!-- Detail Screen -->
+    <string name="detail_title">订阅详情</string>
+    <string name="detail_days_until_renewal">距续费还有 %d 天</string>
+    <string name="detail_overdue">已过期</string>
+
+    <!-- Categories (Preset) -->
+    <string name="category_ai">AI 工具</string>
+    <string name="category_infra">基础设施</string>
+    <string name="category_entertainment">娱乐</string>
+    <string name="category_tools">工具</string>
+    <string name="category_cloud">云服务</string>
+    <string name="category_domain">域名</string>
+    <string name="category_storage">存储</string>
+    <string name="category_other">其他</string>
+
+    <!-- Settings -->
+    <string name="settings_title">设置</string>
+    <string name="settings_general">通用</string>
+    <string name="settings_primary_currency">主币种</string>
+    <string name="settings_theme">主题</string>
+    <string name="settings_language">语言</string>
+    <string name="settings_reminders">提醒</string>
+    <string name="settings_reminder_enabled">到期提醒</string>
+    <string name="settings_remind_3days">提前 3 天</string>
+    <string name="settings_remind_1day">提前 1 天</string>
+    <string name="settings_remind_today">当天</string>
+    <string name="settings_data">数据管理</string>
+    <string name="settings_categories">分类管理</string>
+    <string name="settings_exchange_rates">汇率管理</string>
+    <string name="settings_export_json">导出数据（JSON）</string>
+    <string name="settings_export_csv">导出数据（CSV）</string>
+    <string name="settings_import">导入数据</string>
+    <string name="settings_about">关于</string>
+    <string name="settings_version">版本</string>
+    <string name="settings_theme_system">跟随系统</string>
+    <string name="settings_theme_light">浅色</string>
+    <string name="settings_theme_dark">深色</string>
+    <string name="settings_syncing_rates">正在同步汇率…</string>
+    <string name="settings_rates_synced">汇率同步成功</string>
+    <string name="settings_rates_sync_failed">汇率同步失败</string>
+
+    <!-- Category Management -->
+    <string name="category_manage_title">分类管理</string>
+    <string name="category_preset">预设分类</string>
+    <string name="category_custom">自定义分类</string>
+    <string name="category_add">添加分类</string>
+    <string name="category_edit">编辑分类</string>
+    <string name="category_name">分类名称</string>
+    <string name="category_icon">图标</string>
+    <string name="category_color">颜色</string>
+    <string name="category_empty_custom">暂无自定义分类</string>
+    <string name="category_delete_confirm_title">删除分类</string>
+    <string name="category_delete_confirm_message">确定要删除「%s」吗？使用此分类的订阅将变为未分类。</string>
+    <string name="category_cannot_delete_preset">预设分类不可删除</string>
+    <string name="error_category_name_required">请输入分类名称</string>
+    <string name="error_category_name_duplicate">此分类名称已存在</string>
+
+    <!-- Stats -->
+    <string name="stats_title">统计报表</string>
+    <string name="stats_tab_category">分类占比</string>
+    <string name="stats_tab_trend">月度趋势</string>
+    <string name="stats_tab_compare">分类对比</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_name">续费提醒</string>
+    <string name="notification_channel_desc">订阅服务即将到期的提醒通知</string>
+    <string name="notification_renewal_title">订阅续费提醒</string>
+    <string name="notification_renewal_today">%s 今天到期</string>
+    <string name="notification_renewal_days">%1$s 将在 %2$d 天后到期</string>
+
+    <!-- Validation -->
+    <string name="error_name_required">请输入订阅名称</string>
+    <string name="error_amount_invalid">请输入有效金额</string>
+    <string name="error_amount_positive">金额必须大于 0</string>
+
+    <!-- Common -->
+    <string name="confirm_delete_title">删除订阅</string>
+    <string name="confirm_delete_message">确定要删除「%s」吗？</string>
+    <string name="action_confirm">确认</string>
+</resources>
