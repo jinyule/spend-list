@@ -354,6 +354,7 @@ private fun DetailRow(label: String, value: String) {
 private fun cycleSuffix(cycle: BillingCycle): String {
     return when (cycle) {
         is BillingCycle.Monthly -> stringResource(R.string.home_per_month)
+        is BillingCycle.Quarterly -> stringResource(R.string.home_per_quarter)
         is BillingCycle.Yearly -> stringResource(R.string.home_per_year)
         is BillingCycle.Custom -> "/${cycle.days}d"
     }
@@ -363,6 +364,7 @@ private fun cycleSuffix(cycle: BillingCycle): String {
 private fun cycleLabel(cycle: BillingCycle): String {
     return when (cycle) {
         is BillingCycle.Monthly -> stringResource(R.string.cycle_monthly)
+        is BillingCycle.Quarterly -> stringResource(R.string.cycle_quarterly)
         is BillingCycle.Yearly -> stringResource(R.string.cycle_yearly)
         is BillingCycle.Custom -> stringResource(R.string.cycle_days, cycle.days)
     }

@@ -28,6 +28,9 @@ class GetTotalSpentUseCase @Inject constructor(
                 is BillingCycle.Monthly -> {
                     ChronoUnit.MONTHS.between(sub.startDate, sub.nextRenewalDate)
                 }
+                is BillingCycle.Quarterly -> {
+                    ChronoUnit.MONTHS.between(sub.startDate, sub.nextRenewalDate) / 3
+                }
                 is BillingCycle.Yearly -> {
                     ChronoUnit.YEARS.between(sub.startDate, sub.nextRenewalDate)
                 }

@@ -25,7 +25,7 @@ class RecordRenewalUseCase @Inject constructor(
             ?: return Result.Error("Subscription not found")
 
         val previousRenewalDate = subscription.nextRenewalDate
-        val newRenewalDate = subscription.billingCycle.calculateNextRenewalDate(previousRenewalDate)
+        val newRenewalDate = subscription.billingCycle.calculateNextRenewalDate(previousRenewalDate, subscription.billingDayOfMonth)
 
         // Create renewal history record
         val history = RenewalHistory(

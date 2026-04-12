@@ -140,6 +140,7 @@ private fun formatRenewalDate(subscription: Subscription): String {
 private fun formatCycleSuffix(cycle: BillingCycle): String {
     return when (cycle) {
         is BillingCycle.Monthly -> stringResource(R.string.home_per_month)
+        is BillingCycle.Quarterly -> stringResource(R.string.home_per_quarter)
         is BillingCycle.Yearly -> stringResource(R.string.home_per_year)
         is BillingCycle.Custom -> "/${cycle.days}d"
     }

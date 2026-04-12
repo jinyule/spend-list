@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
         CurrencyRateEntity::class,
         RenewalHistoryEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class SpendListDatabase : RoomDatabase() {
@@ -72,6 +72,12 @@ abstract class SpendListDatabase : RoomDatabase() {
                 db.execSQL("""
                     CREATE INDEX IF NOT EXISTS index_renewal_history_subscription_id ON renewal_history(subscription_id)
                 """.trimIndent())
+            }
+        }
+
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE subscriptions ADD COLUMN billing_day_of_month INTEGER DEFAULT NULL")
             }
         }
 

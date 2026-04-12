@@ -27,7 +27,7 @@ object DatabaseModule {
             "spend_list.db"
         )
             .addCallback(SpendListDatabase.SeedCallback(context))
-            .addMigrations(SpendListDatabase.MIGRATION_1_2)
+            .addMigrations(SpendListDatabase.MIGRATION_1_2, SpendListDatabase.MIGRATION_2_3)
             .build()
     }
 

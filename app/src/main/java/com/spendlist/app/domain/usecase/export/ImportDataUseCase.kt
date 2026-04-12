@@ -46,6 +46,7 @@ class ImportDataUseCase @Inject constructor(
             val amountIdx = header.indexOf("amount")
             val currencyIdx = header.indexOf("currency")
             val cycleTypeIdx = header.indexOf("billingCycleType")
+            val billingDayIdx = header.indexOf("billingDayOfMonth")
             val startDateIdx = header.indexOf("startDate")
             val nextRenewalIdx = header.indexOf("nextRenewalDate")
             val statusIdx = header.indexOf("status")
@@ -65,6 +66,7 @@ class ImportDataUseCase @Inject constructor(
                     amount = cols.getOrElse(amountIdx) { "0" },
                     currency = cols.getOrElse(currencyIdx) { "CNY" },
                     billingCycleType = cols.getOrElse(cycleTypeIdx) { "MONTHLY" },
+                    billingDayOfMonth = billingDayIdx.takeIf { it >= 0 }?.let { cols.getOrElse(it) { "" }.toIntOrNull() },
                     startDate = cols.getOrElse(startDateIdx) { LocalDate.now().toString() },
                     nextRenewalDate = cols.getOrElse(nextRenewalIdx) { LocalDate.now().plusMonths(1).toString() },
                     status = cols.getOrElse(statusIdx) { "ACTIVE" },
@@ -106,10 +108,12 @@ class ImportDataUseCase @Inject constructor(
         amount = BigDecimal(amount),
         currency = Currency.fromCode(currency) ?: Currency.CNY,
         billingCycle = when (billingCycleType) {
+            "QUARTERLY" -> BillingCycle.Quarterly
             "YEARLY" -> BillingCycle.Yearly
             "CUSTOM" -> BillingCycle.Custom(billingCycleDays ?: 30)
             else -> BillingCycle.Monthly
         },
+        billingDayOfMonth = billingDayOfMonth,
         startDate = LocalDate.parse(startDate),
         nextRenewalDate = LocalDate.parse(nextRenewalDate),
         note = note,

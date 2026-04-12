@@ -35,6 +35,8 @@ data class SubscriptionEntity(
     val billingCycleType: String,
     @ColumnInfo(name = "billing_cycle_days")
     val billingCycleDays: Int?,
+    @ColumnInfo(name = "billing_day_of_month")
+    val billingDayOfMonth: Int? = null,
     @ColumnInfo(name = "start_date")
     val startDate: Long,
     @ColumnInfo(name = "next_renewal_date")

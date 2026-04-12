@@ -43,6 +43,8 @@ data class AddEditUiState(
     val nameError: String? = null,
     val amountError: String? = null,
     val customDaysError: String? = null,
+    val billingDayOfMonth: String = "",
+    val billingDayError: String? = null,
     val isSaving: Boolean = false
 )
 
@@ -89,6 +91,7 @@ class AddEditViewModel @Inject constructor(
                 currency = sub.currency,
                 billingCycleType = when (sub.billingCycle) {
                     is BillingCycle.Monthly -> "MONTHLY"
+                    is BillingCycle.Quarterly -> "QUARTERLY"
                     is BillingCycle.Yearly -> "YEARLY"
                     is BillingCycle.Custom -> "CUSTOM"
                 },
@@ -96,6 +99,7 @@ class AddEditViewModel @Inject constructor(
                     is BillingCycle.Custom -> sub.billingCycle.days.toString()
                     else -> "30"
                 },
+                billingDayOfMonth = sub.billingDayOfMonth?.toString() ?: "",
                 startDate = sub.startDate,
                 nextRenewalDate = sub.nextRenewalDate,
                 note = sub.note ?: "",
@@ -119,7 +123,21 @@ class AddEditViewModel @Inject constructor(
     }
 
     fun onBillingCycleTypeChange(type: String) {
-        _uiState.value = _uiState.value.copy(billingCycleType = type)
+        val newState = if (type == "CUSTOM") {
+            _uiState.value.copy(billingCycleType = type, billingDayOfMonth = "", billingDayError = null)
+        } else {
+            _uiState.value.copy(billingCycleType = type)
+        }
+        _uiState.value = newState
+        updateNextRenewalDate()
+    }
+
+    fun onBillingDayChange(day: String) {
+        val error = if (day.isNotBlank()) {
+            val dayInt = day.toIntOrNull()
+            if (dayInt == null || dayInt < 1 || dayInt > 31) "1-31" else null
+        } else null
+        _uiState.value = _uiState.value.copy(billingDayOfMonth = day, billingDayError = error)
         updateNextRenewalDate()
     }
 
@@ -164,8 +182,9 @@ class AddEditViewModel @Inject constructor(
     private fun updateNextRenewalDate() {
         val state = _uiState.value
         val cycle = buildBillingCycle(state)
+        val billingDay = state.billingDayOfMonth.toIntOrNull()
         _uiState.value = state.copy(
-            nextRenewalDate = cycle.calculateNextRenewalDate(state.startDate)
+            nextRenewalDate = cycle.calculateNextRenewalDate(state.startDate, billingDay)
         )
     }
 
@@ -208,6 +227,7 @@ class AddEditViewModel @Inject constructor(
             amount = amount,
             currency = state.currency,
             billingCycle = buildBillingCycle(state),
+            billingDayOfMonth = state.billingDayOfMonth.toIntOrNull(),
             startDate = state.startDate,
             nextRenewalDate = state.nextRenewalDate,
             note = state.note.ifBlank { null },
@@ -251,6 +271,7 @@ class AddEditViewModel @Inject constructor(
 
     private fun buildBillingCycle(state: AddEditUiState): BillingCycle {
         return when (state.billingCycleType) {
+            "QUARTERLY" -> BillingCycle.Quarterly
             "YEARLY" -> BillingCycle.Yearly
             "CUSTOM" -> BillingCycle.Custom(state.customDays.toIntOrNull() ?: 30)
             else -> BillingCycle.Monthly

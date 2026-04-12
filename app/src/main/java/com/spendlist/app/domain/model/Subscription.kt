@@ -10,6 +10,7 @@ data class Subscription(
     val amount: BigDecimal,
     val currency: Currency,
     val billingCycle: BillingCycle,
+    val billingDayOfMonth: Int? = null,
     val startDate: LocalDate,
     val nextRenewalDate: LocalDate,
     val note: String? = null,

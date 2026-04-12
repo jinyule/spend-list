@@ -21,10 +21,12 @@ fun SubscriptionEntity.toDomain(): Subscription {
         currency = Currency.fromCode(currencyCode) ?: Currency.CNY,
         billingCycle = when (billingCycleType) {
             "MONTHLY" -> BillingCycle.Monthly
+            "QUARTERLY" -> BillingCycle.Quarterly
             "YEARLY" -> BillingCycle.Yearly
             "CUSTOM" -> BillingCycle.Custom((billingCycleDays ?: 30).coerceAtLeast(1))
             else -> BillingCycle.Monthly
         },
+        billingDayOfMonth = billingDayOfMonth,
         startDate = millisToLocalDate(startDate),
         nextRenewalDate = millisToLocalDate(nextRenewalDate),
         note = note,
@@ -49,6 +51,7 @@ fun Subscription.toEntity(): SubscriptionEntity {
         currencyCode = currency.code,
         billingCycleType = when (billingCycle) {
             is BillingCycle.Monthly -> "MONTHLY"
+            is BillingCycle.Quarterly -> "QUARTERLY"
             is BillingCycle.Yearly -> "YEARLY"
             is BillingCycle.Custom -> "CUSTOM"
         },
@@ -56,6 +59,7 @@ fun Subscription.toEntity(): SubscriptionEntity {
             is BillingCycle.Custom -> billingCycle.days
             else -> null
         },
+        billingDayOfMonth = billingDayOfMonth,
         startDate = localDateToMillis(startDate),
         nextRenewalDate = localDateToMillis(nextRenewalDate),
         note = note,

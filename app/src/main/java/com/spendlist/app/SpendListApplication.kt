@@ -6,8 +6,11 @@ import android.app.NotificationManager
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.spendlist.app.worker.AutoRenewalWorker
 import com.spendlist.app.worker.ExchangeRateSyncWorker
 import com.spendlist.app.worker.RenewalReminderWorker
 import dagger.hilt.android.HiltAndroidApp
@@ -46,6 +49,24 @@ class SpendListApplication : Application() {
 
     private fun scheduleWorkers() {
         val workManager = WorkManager.getInstance(this)
+
+        // Auto-renewal: run immediately on app start to update stale dates
+        val immediateAutoRenewal = OneTimeWorkRequestBuilder<AutoRenewalWorker>().build()
+        workManager.enqueueUniqueWork(
+            "auto_renewal_immediate",
+            ExistingWorkPolicy.REPLACE,
+            immediateAutoRenewal
+        )
+
+        // Auto-renewal: daily periodic check
+        val autoRenewalWork = PeriodicWorkRequestBuilder<AutoRenewalWorker>(
+            1, TimeUnit.DAYS
+        ).build()
+        workManager.enqueueUniquePeriodicWork(
+            AutoRenewalWorker.WORK_NAME,
+            ExistingPeriodicWorkPolicy.KEEP,
+            autoRenewalWork
+        )
 
         // Daily renewal reminder check
         val reminderWork = PeriodicWorkRequestBuilder<RenewalReminderWorker>(

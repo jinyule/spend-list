@@ -32,14 +32,5 @@
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
             tools:node="remove" />
-
-        <!-- Test reminder receiver -->
-        <receiver
-            android:name=".receiver.TestReminderReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="com.spendlist.app.TEST_REMINDER" />
-            </intent-filter>
-        </receiver>
     </application>
 </manifest>

@@ -17,6 +17,7 @@ data class SubscriptionExportDto(
     val currency: String,
     val billingCycleType: String,
     val billingCycleDays: Int? = null,
+    val billingDayOfMonth: Int? = null,
     val startDate: String,
     val nextRenewalDate: String,
     val note: String? = null,
@@ -37,7 +38,7 @@ class ExportDataUseCase @Inject constructor(
 
     suspend fun exportCsv(): String {
         val subs = repository.getAll().first()
-        val header = "name,amount,currency,billingCycleType,billingCycleDays,startDate,nextRenewalDate,status,categoryId,note,manageUrl"
+        val header = "name,amount,currency,billingCycleType,billingCycleDays,billingDayOfMonth,startDate,nextRenewalDate,status,categoryId,note,manageUrl"
         val rows = subs.map { sub ->
             val dto = sub.toExportDto()
             listOf(
@@ -46,6 +47,7 @@ class ExportDataUseCase @Inject constructor(
                 dto.currency,
                 dto.billingCycleType,
                 dto.billingCycleDays?.toString() ?: "",
+                dto.billingDayOfMonth?.toString() ?: "",
                 dto.startDate,
                 dto.nextRenewalDate,
                 dto.status,
@@ -64,10 +66,12 @@ class ExportDataUseCase @Inject constructor(
         currency = currency.code,
         billingCycleType = when (billingCycle) {
             is BillingCycle.Monthly -> "MONTHLY"
+            is BillingCycle.Quarterly -> "QUARTERLY"
             is BillingCycle.Yearly -> "YEARLY"
             is BillingCycle.Custom -> "CUSTOM"
         },
         billingCycleDays = (billingCycle as? BillingCycle.Custom)?.days,
+        billingDayOfMonth = billingDayOfMonth,
         startDate = startDate.toString(),
         nextRenewalDate = nextRenewalDate.toString(),
         note = note,
