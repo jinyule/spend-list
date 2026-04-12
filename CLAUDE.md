@@ -33,3 +33,5 @@
 | 构建验证与修复 | [docs/handover-build-fix.md](docs/handover-build-fix.md) | 已完成 |
 | 手机验证问题修复 | [docs/handover-mobile-verification.md](docs/handover-mobile-verification.md) | 已完成 |
 | 代码审查与修复 | [docs/handover-code-review-fix.md](docs/handover-code-review-fix.md) | 已完成 |
+| 季度周期 + 扣款日 + 自动续期 | [docs/handover-quarterly-billing-day-autorenew.md](docs/handover-quarterly-billing-day-autorenew.md) | 已完成 |
+| 计费周期布局 + 扣款日选择修复 | [docs/handover-ui-fix-billing.md](docs/handover-ui-fix-billing.md) | 已完成 |

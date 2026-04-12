@@ -13,6 +13,7 @@
     <string name="home_cumulative_spend">累计花费</string>
     <string name="home_per_month">/月</string>
     <string name="home_per_year">/年</string>
+    <string name="home_per_quarter">/季</string>
     <string name="home_filter_all">全部</string>
     <string name="home_upcoming_renewals">即将到期</string>
     <string name="home_empty_title">暂无订阅</string>
@@ -26,6 +27,7 @@
     <!-- Billing Cycle -->
     <string name="cycle_monthly">月付</string>
     <string name="cycle_yearly">年付</string>
+    <string name="cycle_quarterly">季付</string>
     <string name="cycle_custom">自定义</string>
     <string name="cycle_days">%d 天</string>
 
@@ -37,6 +39,9 @@
     <string name="field_amount">金额</string>
     <string name="field_currency">币种</string>
     <string name="field_billing_cycle">计费周期</string>
+    <string name="field_billing_day">扣款日（可选）</string>
+    <string name="field_billing_day_hint">1-31</string>
+    <string name="field_billing_day_none">不设置</string>
     <string name="field_start_date">开始日期</string>
     <string name="field_next_renewal">下次续费日</string>
     <string name="field_icon">图标</string>

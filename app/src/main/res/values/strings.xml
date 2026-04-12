@@ -13,6 +13,7 @@
     <string name="home_cumulative_spend">Cumulative Spend</string>
     <string name="home_per_month">/mo</string>
     <string name="home_per_year">/yr</string>
+    <string name="home_per_quarter">/qtr</string>
     <string name="home_filter_all">All</string>
     <string name="home_upcoming_renewals">Upcoming Renewals</string>
     <string name="home_empty_title">No Subscriptions Yet</string>
@@ -26,6 +27,7 @@
     <!-- Billing Cycle -->
     <string name="cycle_monthly">Monthly</string>
     <string name="cycle_yearly">Yearly</string>
+    <string name="cycle_quarterly">Quarterly</string>
     <string name="cycle_custom">Custom</string>
     <string name="cycle_days">%d days</string>
 
@@ -37,6 +39,9 @@
     <string name="field_amount">Amount</string>
     <string name="field_currency">Currency</string>
     <string name="field_billing_cycle">Billing Cycle</string>
+    <string name="field_billing_day">Billing Day (optional)</string>
+    <string name="field_billing_day_hint">1-31</string>
+    <string name="field_billing_day_none">None</string>
     <string name="field_start_date">Start Date</string>
     <string name="field_next_renewal">Next Renewal</string>
     <string name="field_icon">Icon</string>

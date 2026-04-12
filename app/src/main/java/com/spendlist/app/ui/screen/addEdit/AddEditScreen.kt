@@ -2,6 +2,8 @@ package com.spendlist.app.ui.screen.addEdit
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -60,7 +62,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddEditScreen(
     onNavigateBack: () -> Unit,
@@ -163,12 +165,13 @@ fun AddEditScreen(
                 text = stringResource(R.string.field_billing_cycle),
                 style = MaterialTheme.typography.labelLarge
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 listOf(
                     "MONTHLY" to R.string.cycle_monthly,
+                    "QUARTERLY" to R.string.cycle_quarterly,
                     "YEARLY" to R.string.cycle_yearly,
                     "CUSTOM" to R.string.cycle_custom
                 ).forEach { (type, labelRes) ->
@@ -195,6 +198,15 @@ fun AddEditScreen(
                     supportingText = uiState.customDaysError?.let { { Text(it) } },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            // Billing day of month (optional, not for Custom)
+            if (uiState.billingCycleType != "CUSTOM") {
+                BillingDayDropdown(
+                    selectedDay = uiState.billingDayOfMonth,
+                    onDaySelect = viewModel::onBillingDayChange,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -417,6 +429,55 @@ private fun CategoryDropdown(
                     },
                     onClick = {
                         onSelect(category.id)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BillingDayDropdown(
+    selectedDay: String,
+    onDaySelect: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val dayInt = selectedDay.toIntOrNull()
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            value = if (dayInt != null) dayInt.toString() else "",
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(stringResource(R.string.field_billing_day)) },
+            placeholder = { Text(stringResource(R.string.field_billing_day_hint)) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            singleLine = true,
+            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable)
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.field_billing_day_none)) },
+                onClick = {
+                    onDaySelect("")
+                    expanded = false
+                }
+            )
+            (1..31).forEach { day ->
+                DropdownMenuItem(
+                    text = { Text(day.toString()) },
+                    onClick = {
+                        onDaySelect(day.toString())
                         expanded = false
                     }
                 )
