@@ -39,13 +39,20 @@ fun SpendListNavHost(
             StatsScreen()
         }
 
-        composable(Screen.Settings.route) {
+        composable(Screen.Settings.route) { backStackEntry ->
+            // Observe import content from SAF launcher in MainActivity
+            val importContent = backStackEntry.savedStateHandle.get<String>("import_content")
+            if (importContent != null) {
+                backStackEntry.savedStateHandle.remove<String>("import_content")
+            }
+
             SettingsScreen(
                 onCategoryManageClick = {
                     navController.navigate(Screen.CategoryManage.route)
                 },
                 onExportData = onExportData,
-                onRequestImport = onRequestImport
+                onRequestImport = onRequestImport,
+                importContent = importContent
             )
         }
 

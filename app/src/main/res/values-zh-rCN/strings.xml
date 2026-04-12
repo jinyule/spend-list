@@ -71,6 +71,7 @@
     <string name="settings_language">语言</string>
     <string name="settings_reminders">提醒</string>
     <string name="settings_reminder_enabled">到期提醒</string>
+    <string name="settings_remind_subtitle">提醒时间：</string>
     <string name="settings_remind_3days">提前 3 天</string>
     <string name="settings_remind_1day">提前 1 天</string>
     <string name="settings_remind_today">当天</string>
@@ -132,6 +133,8 @@
     <string name="action_confirm">确认</string>
 
     <!-- Renewal -->
+    <string name="settings_import_success">成功导入 %d 条订阅</string>
+    <string name="settings_import_error">导入失败：%s</string>
     <string name="action_renew">续约</string>
     <string name="renewal_history">续约记录</string>
     <string name="renewal_count">已续约 %d 次</string>

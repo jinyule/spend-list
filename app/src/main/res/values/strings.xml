@@ -71,6 +71,7 @@
     <string name="settings_language">Language</string>
     <string name="settings_reminders">Reminders</string>
     <string name="settings_reminder_enabled">Renewal Reminders</string>
+    <string name="settings_remind_subtitle">Remind me:</string>
     <string name="settings_remind_3days">3 days before</string>
     <string name="settings_remind_1day">1 day before</string>
     <string name="settings_remind_today">On the day</string>
@@ -132,6 +133,8 @@
     <string name="action_confirm">Confirm</string>
 
     <!-- Renewal -->
+    <string name="settings_import_success">Successfully imported %d subscriptions</string>
+    <string name="settings_import_error">Import failed: %s</string>
     <string name="action_renew">Renew</string>
     <string name="renewal_history">Renewal History</string>
     <string name="renewal_count">Renewed %d times</string>

@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -31,12 +32,24 @@ fun SettingsScreen(
     onCategoryManageClick: () -> Unit,
     onExportData: (String, String) -> Unit = { _, _ -> }, // (data, filename) -> save to SAF
     onRequestImport: () -> Unit = {},
+    importContent: String? = null,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showCurrencyPicker by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
+
+    // Handle imported content from SAF
+    LaunchedEffect(importContent) {
+        if (importContent != null) {
+            if (importContent.trimStart().startsWith("{") || importContent.trimStart().startsWith("[")) {
+                viewModel.onImportJson(importContent)
+            } else {
+                viewModel.onImportCsv(importContent)
+            }
+        }
+    }
 
     val context = LocalContext.current
 
@@ -175,7 +188,7 @@ fun SettingsScreen(
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                     Text(
-                        text = "Remind me:",
+                        text = stringResource(R.string.settings_remind_subtitle),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
@@ -330,6 +343,37 @@ fun SettingsScreen(
                         else stringResource(R.string.settings_rates_sync_failed),
                         modifier = Modifier.weight(1f)
                     )
+                    IconButton(onClick = { viewModel.onClearMessage() }) {
+                        Icon(Icons.Default.Close, contentDescription = null)
+                    }
+                }
+            }
+        }
+
+        // Import result message
+        if (uiState.importMessage != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            val isSuccess = uiState.importMessage!!.startsWith("import_success")
+            val messageText = if (isSuccess) {
+                val count = uiState.importMessage!!.substringAfter(":").toIntOrNull() ?: 0
+                stringResource(R.string.settings_import_success, count)
+            } else {
+                val error = uiState.importMessage!!.substringAfter(":")
+                stringResource(R.string.settings_import_error, error)
+            }
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isSuccess) MaterialTheme.colorScheme.primaryContainer
+                    else MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = messageText, modifier = Modifier.weight(1f))
                     IconButton(onClick = { viewModel.onClearMessage() }) {
                         Icon(Icons.Default.Close, contentDescription = null)
                     }

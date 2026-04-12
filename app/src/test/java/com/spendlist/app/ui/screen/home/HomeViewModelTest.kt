@@ -11,6 +11,7 @@ import com.spendlist.app.domain.repository.CategoryRepository
 import com.spendlist.app.domain.usecase.currency.ConvertCurrencyUseCase
 import com.spendlist.app.domain.usecase.subscription.DeleteSubscriptionUseCase
 import com.spendlist.app.domain.usecase.subscription.GetSubscriptionsUseCase
+import com.spendlist.app.domain.usecase.subscription.GetTotalSpentUseCase
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -36,6 +37,7 @@ class HomeViewModelTest {
     private lateinit var categoryRepository: CategoryRepository
     private lateinit var convertCurrency: ConvertCurrencyUseCase
     private lateinit var userPreferences: UserPreferences
+    private lateinit var getTotalSpent: GetTotalSpentUseCase
     private lateinit var viewModel: HomeViewModel
 
     private val sampleSubscriptions = listOf(
@@ -63,8 +65,10 @@ class HomeViewModelTest {
         categoryRepository = mockk()
         convertCurrency = mockk()
         userPreferences = mockk()
+        getTotalSpent = mockk()
         every { categoryRepository.getAll() } returns flowOf(emptyList())
         every { userPreferences.primaryCurrencyCode } returns flowOf("CNY")
+        coEvery { getTotalSpent(any()) } returns BigDecimal.ZERO
     }
 
     @After
@@ -76,7 +80,7 @@ class HomeViewModelTest {
         every { getSubscriptions(any(), any()) } returns flowOf(sampleSubscriptions)
         coEvery { convertCurrency(any(), any(), any()) } returns
             ConvertCurrencyUseCase.Result.Success(BigDecimal("145.00"))
-        return HomeViewModel(getSubscriptions, deleteSubscription, categoryRepository, convertCurrency, userPreferences)
+        return HomeViewModel(getSubscriptions, deleteSubscription, categoryRepository, convertCurrency, userPreferences, getTotalSpent)
     }
 
     @Test
@@ -84,7 +88,7 @@ class HomeViewModelTest {
         every { getSubscriptions(any(), any()) } returns flowOf(emptyList())
         coEvery { convertCurrency(any(), any(), any()) } returns
             ConvertCurrencyUseCase.Result.Success(BigDecimal.ZERO)
-        viewModel = HomeViewModel(getSubscriptions, deleteSubscription, categoryRepository, convertCurrency, userPreferences)
+        viewModel = HomeViewModel(getSubscriptions, deleteSubscription, categoryRepository, convertCurrency, userPreferences, getTotalSpent)
 
         // Before collection starts, isLoading is true
         assertThat(viewModel.uiState.value.isLoading).isTrue()
@@ -108,7 +112,7 @@ class HomeViewModelTest {
         every { getSubscriptions(any(), any()) } returns flowOf(emptyList())
         coEvery { convertCurrency(any(), any(), any()) } returns
             ConvertCurrencyUseCase.Result.Success(BigDecimal.ZERO)
-        viewModel = HomeViewModel(getSubscriptions, deleteSubscription, categoryRepository, convertCurrency, userPreferences)
+        viewModel = HomeViewModel(getSubscriptions, deleteSubscription, categoryRepository, convertCurrency, userPreferences, getTotalSpent)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiState.test {

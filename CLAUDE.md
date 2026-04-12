@@ -32,3 +32,4 @@
 | Phase 6: 导入导出 + i18n + 收尾 | [docs/handover-phase6.md](docs/handover-phase6.md) | 已完成 |
 | 构建验证与修复 | [docs/handover-build-fix.md](docs/handover-build-fix.md) | 已完成 |
 | 手机验证问题修复 | [docs/handover-mobile-verification.md](docs/handover-mobile-verification.md) | 已完成 |
+| 代码审查与修复 | [docs/handover-code-review-fix.md](docs/handover-code-review-fix.md) | 已完成 |
