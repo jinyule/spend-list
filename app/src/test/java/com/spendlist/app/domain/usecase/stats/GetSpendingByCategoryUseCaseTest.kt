@@ -82,7 +82,7 @@ class GetSpendingByCategoryUseCaseTest {
     }
 
     @Test
-    fun cancelledSubscriptions_excluded() = runTest {
+    fun currentMonthly_cancelledSubscriptions_excluded() = runTest {
         val activeSub = createSub(categoryId = 1, amount = BigDecimal("100"))
         val cancelledSub = activeSub.copy(status = SubscriptionStatus.CANCELLED)
         every { subscriptionRepository.getAll() } returns flowOf(listOf(activeSub, cancelledSub))
@@ -91,10 +91,64 @@ class GetSpendingByCategoryUseCaseTest {
             ConvertCurrencyUseCase.Result.Success(firstArg())
         }
 
-        val result = useCase(Currency.CNY).first()
+        val result = useCase(Currency.CNY, CategoryStatsMode.CURRENT_MONTHLY).first()
 
         assertThat(result).hasSize(1)
         assertThat(result[0].amount.compareTo(BigDecimal("100"))).isEqualTo(0)
+    }
+
+    @Test
+    fun historicalTotal_includesCancelledAndExpired() = runTest {
+        // Each sub paid 3 months (startDate Jan 1 → nextRenewalDate Apr 1 = 3 cycles)
+        val active = Subscription(
+            id = 1, name = "ActiveSub", categoryId = 1, amount = BigDecimal("100"),
+            currency = Currency.CNY, billingCycle = BillingCycle.Monthly,
+            startDate = LocalDate.of(2024, 1, 1), nextRenewalDate = LocalDate.of(2024, 4, 1),
+            status = SubscriptionStatus.ACTIVE
+        )
+        val expired = active.copy(id = 2, name = "ExpiredSub", status = SubscriptionStatus.EXPIRED)
+        val cancelled = active.copy(id = 3, name = "CancelledSub", status = SubscriptionStatus.CANCELLED)
+        every { subscriptionRepository.getAll() } returns flowOf(listOf(active, expired, cancelled))
+        every { categoryRepository.getAll() } returns flowOf(listOf(aiCategory))
+        coEvery { convertCurrency(any(), any(), any()) } answers {
+            ConvertCurrencyUseCase.Result.Success(firstArg())
+        }
+
+        val result = useCase(Currency.CNY, CategoryStatsMode.HISTORICAL_TOTAL).first()
+
+        // All three subs: each 100 × 3 cycles = 300; total 900 in one category
+        assertThat(result).hasSize(1)
+        assertThat(result[0].amount.compareTo(BigDecimal("900"))).isEqualTo(0)
+    }
+
+    @Test
+    fun currentMonthly_and_historicalTotal_differ() = runTest {
+        // One active (100/mo, 3 paid) and one cancelled (50/mo, 2 paid)
+        val active = Subscription(
+            id = 1, name = "Active", categoryId = 1, amount = BigDecimal("100"),
+            currency = Currency.CNY, billingCycle = BillingCycle.Monthly,
+            startDate = LocalDate.of(2024, 1, 1), nextRenewalDate = LocalDate.of(2024, 4, 1),
+            status = SubscriptionStatus.ACTIVE
+        )
+        val cancelled = Subscription(
+            id = 2, name = "Cancelled", categoryId = 1, amount = BigDecimal("50"),
+            currency = Currency.CNY, billingCycle = BillingCycle.Monthly,
+            startDate = LocalDate.of(2024, 1, 1), nextRenewalDate = LocalDate.of(2024, 3, 1),
+            status = SubscriptionStatus.CANCELLED
+        )
+        every { subscriptionRepository.getAll() } returns flowOf(listOf(active, cancelled))
+        every { categoryRepository.getAll() } returns flowOf(listOf(aiCategory))
+        coEvery { convertCurrency(any(), any(), any()) } answers {
+            ConvertCurrencyUseCase.Result.Success(firstArg())
+        }
+
+        val current = useCase(Currency.CNY, CategoryStatsMode.CURRENT_MONTHLY).first()
+        val historical = useCase(Currency.CNY, CategoryStatsMode.HISTORICAL_TOTAL).first()
+
+        // Current: only active sub counted → 100
+        assertThat(current[0].amount.compareTo(BigDecimal("100"))).isEqualTo(0)
+        // Historical: 100 × 3 + 50 × 2 = 400
+        assertThat(historical[0].amount.compareTo(BigDecimal("400"))).isEqualTo(0)
     }
 
     @Test

@@ -119,6 +119,8 @@
     <string name="stats_tab_category">分类占比</string>
     <string name="stats_tab_trend">月度趋势</string>
     <string name="stats_tab_compare">分类对比</string>
+    <string name="stats_mode_current">当前每月</string>
+    <string name="stats_mode_historical">历史累计</string>
 
     <!-- Notifications -->
     <string name="notification_channel_name">续费提醒</string>
@@ -126,6 +128,12 @@
     <string name="notification_renewal_title">订阅续费提醒</string>
     <string name="notification_renewal_today">%s 今天到期</string>
     <string name="notification_renewal_days">%1$s 将在 %2$d 天后到期</string>
+    <string name="notification_expired_title">订阅已过期</string>
+    <string name="notification_expired_single">%s 已过期，请续约或取消</string>
+    <string name="notification_expired_multiple">%1$d 个订阅已过期：%2$s</string>
+
+    <!-- Home: expired banner -->
+    <string name="home_expired_banner">%d 个订阅已过期 · 点击查看</string>
 
     <!-- Validation -->
     <string name="error_name_required">请输入订阅名称</string>

@@ -119,6 +119,8 @@
     <string name="stats_tab_category">By Category</string>
     <string name="stats_tab_trend">Monthly Trend</string>
     <string name="stats_tab_compare">Compare</string>
+    <string name="stats_mode_current">Current Monthly</string>
+    <string name="stats_mode_historical">Historical Total</string>
 
     <!-- Notifications -->
     <string name="notification_channel_name">Renewal Reminders</string>
@@ -126,6 +128,12 @@
     <string name="notification_renewal_title">Subscription Renewal</string>
     <string name="notification_renewal_today">%s renews today</string>
     <string name="notification_renewal_days">%1$s renews in %2$d days</string>
+    <string name="notification_expired_title">Expired Subscriptions</string>
+    <string name="notification_expired_single">%s has expired — renew or cancel it</string>
+    <string name="notification_expired_multiple">%1$d subscriptions expired: %2$s</string>
+
+    <!-- Home: expired banner -->
+    <string name="home_expired_banner">%d expired · tap to view</string>
 
     <!-- Validation -->
     <string name="error_name_required">Name is required</string>

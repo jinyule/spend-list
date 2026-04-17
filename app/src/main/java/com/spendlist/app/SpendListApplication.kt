@@ -10,8 +10,8 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import com.spendlist.app.worker.AutoRenewalWorker
 import com.spendlist.app.worker.ExchangeRateSyncWorker
+import com.spendlist.app.worker.ExpirationCheckWorker
 import com.spendlist.app.worker.RenewalReminderWorker
 import dagger.hilt.android.HiltAndroidApp
 import java.util.concurrent.TimeUnit
@@ -50,22 +50,26 @@ class SpendListApplication : Application() {
     private fun scheduleWorkers() {
         val workManager = WorkManager.getInstance(this)
 
-        // Auto-renewal: run immediately on app start to update stale dates
-        val immediateAutoRenewal = OneTimeWorkRequestBuilder<AutoRenewalWorker>().build()
+        // Cancel legacy auto-renewal work from older app versions (no longer used).
+        workManager.cancelUniqueWork("auto_renewal_immediate")
+        workManager.cancelUniqueWork("auto_renewal")
+
+        // Expiration check: run immediately on app start to catch newly-overdue subscriptions.
+        val immediateExpirationCheck = OneTimeWorkRequestBuilder<ExpirationCheckWorker>().build()
         workManager.enqueueUniqueWork(
-            "auto_renewal_immediate",
+            "expiration_check_immediate",
             ExistingWorkPolicy.REPLACE,
-            immediateAutoRenewal
+            immediateExpirationCheck
         )
 
-        // Auto-renewal: daily periodic check
-        val autoRenewalWork = PeriodicWorkRequestBuilder<AutoRenewalWorker>(
+        // Expiration check: daily periodic run.
+        val expirationCheckWork = PeriodicWorkRequestBuilder<ExpirationCheckWorker>(
             1, TimeUnit.DAYS
         ).build()
         workManager.enqueueUniquePeriodicWork(
-            AutoRenewalWorker.WORK_NAME,
+            ExpirationCheckWorker.WORK_NAME,
             ExistingPeriodicWorkPolicy.KEEP,
-            autoRenewalWork
+            expirationCheckWork
         )
 
         // Daily renewal reminder check

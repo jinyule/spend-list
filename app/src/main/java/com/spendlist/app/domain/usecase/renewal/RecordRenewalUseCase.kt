@@ -1,8 +1,8 @@
 package com.spendlist.app.domain.usecase.renewal
 
-import com.spendlist.app.domain.model.BillingCycle
 import com.spendlist.app.domain.model.RenewalHistory
 import com.spendlist.app.domain.model.Subscription
+import com.spendlist.app.domain.model.SubscriptionStatus
 import com.spendlist.app.domain.repository.RenewalHistoryRepository
 import com.spendlist.app.domain.repository.SubscriptionRepository
 import java.time.LocalDate
@@ -27,7 +27,6 @@ class RecordRenewalUseCase @Inject constructor(
         val previousRenewalDate = subscription.nextRenewalDate
         val newRenewalDate = subscription.billingCycle.calculateNextRenewalDate(previousRenewalDate, subscription.billingDayOfMonth)
 
-        // Create renewal history record
         val history = RenewalHistory(
             subscriptionId = subscriptionId,
             previousRenewalDate = previousRenewalDate,
@@ -37,9 +36,19 @@ class RecordRenewalUseCase @Inject constructor(
         )
         renewalHistoryRepository.insert(history)
 
-        // Update subscription
+        // EXPIRED subscriptions become ACTIVE again once renewed past today;
+        // if still behind (caught up only one cycle of multiple), stay EXPIRED.
+        val newStatus = if (subscription.status == SubscriptionStatus.EXPIRED
+            && !newRenewalDate.isBefore(LocalDate.now())
+        ) {
+            SubscriptionStatus.ACTIVE
+        } else {
+            subscription.status
+        }
+
         val updatedSubscription = subscription.copy(
             nextRenewalDate = newRenewalDate,
+            status = newStatus,
             updatedAt = System.currentTimeMillis()
         )
         subscriptionRepository.update(updatedSubscription)

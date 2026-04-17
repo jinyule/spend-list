@@ -5,14 +5,17 @@ import androidx.lifecycle.viewModelScope
 import com.spendlist.app.data.datastore.UserPreferences
 import com.spendlist.app.domain.model.Currency
 import com.spendlist.app.domain.usecase.stats.CategorySpending
+import com.spendlist.app.domain.usecase.stats.CategoryStatsMode
 import com.spendlist.app.domain.usecase.stats.GetMonthlyTrendUseCase
 import com.spendlist.app.domain.usecase.stats.GetSpendingByCategoryUseCase
 import com.spendlist.app.domain.usecase.stats.MonthlySpending
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -20,6 +23,7 @@ data class StatsUiState(
     val categorySpending: List<CategorySpending> = emptyList(),
     val monthlyTrend: List<MonthlySpending> = emptyList(),
     val primaryCurrency: Currency = Currency.CNY,
+    val selectedCategoryMode: CategoryStatsMode = CategoryStatsMode.CURRENT_MONTHLY,
     val isLoading: Boolean = true
 )
 
@@ -33,10 +37,13 @@ class StatsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(StatsUiState())
     val uiState: StateFlow<StatsUiState> = _uiState.asStateFlow()
 
+    private val _selectedCategoryMode = MutableStateFlow(CategoryStatsMode.CURRENT_MONTHLY)
+
     init {
         loadStats()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun loadStats() {
         viewModelScope.launch {
             val currencyCode = userPreferences.primaryCurrencyCode.first()
@@ -44,12 +51,14 @@ class StatsViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(primaryCurrency = currency)
 
             launch {
-                getSpendingByCategory(currency).collect { spending ->
-                    _uiState.value = _uiState.value.copy(
-                        categorySpending = spending,
-                        isLoading = false
-                    )
-                }
+                _selectedCategoryMode
+                    .flatMapLatest { mode -> getSpendingByCategory(currency, mode) }
+                    .collect { spending ->
+                        _uiState.value = _uiState.value.copy(
+                            categorySpending = spending,
+                            isLoading = false
+                        )
+                    }
             }
 
             launch {
@@ -61,5 +70,10 @@ class StatsViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun onCategoryModeChanged(mode: CategoryStatsMode) {
+        _selectedCategoryMode.value = mode
+        _uiState.value = _uiState.value.copy(selectedCategoryMode = mode)
     }
 }

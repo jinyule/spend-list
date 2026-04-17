@@ -79,6 +79,15 @@ fun HomeScreen(
                 modifier = Modifier.padding(16.dp)
             )
 
+            // Expired-subscriptions banner
+            if (uiState.expiredCount > 0) {
+                ExpiredBanner(
+                    count = uiState.expiredCount,
+                    onClick = { viewModel.onStatusFilterChanged(SubscriptionStatus.EXPIRED) },
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+            }
+
             // Category filter chips
             if (uiState.categories.isNotEmpty()) {
                 CategoryFilterRow(
@@ -272,6 +281,35 @@ private fun StatusFilterRow(
                 selected = selectedStatus == status,
                 onClick = { onStatusSelected(status) },
                 label = { Text(stringResource(labelRes)) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ExpiredBanner(
+    count: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        onClick = onClick,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.home_expired_banner, count),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onErrorContainer
             )
         }
     }

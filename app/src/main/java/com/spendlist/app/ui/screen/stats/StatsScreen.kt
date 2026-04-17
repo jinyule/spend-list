@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.spendlist.app.R
+import com.spendlist.app.domain.usecase.stats.CategoryStatsMode
 import com.spendlist.app.ui.component.*
 import java.text.DecimalFormat
 
@@ -65,7 +66,7 @@ fun StatsScreen(
             }
         } else {
             when (selectedTab) {
-                0 -> CategoryTab(uiState)
+                0 -> CategoryTab(uiState, onModeChange = viewModel::onCategoryModeChanged)
                 1 -> TrendTab(uiState)
                 2 -> CompareTab(uiState)
             }
@@ -74,62 +75,90 @@ fun StatsScreen(
 }
 
 @Composable
-private fun CategoryTab(uiState: StatsUiState) {
+private fun CategoryTab(
+    uiState: StatsUiState,
+    onModeChange: (CategoryStatsMode) -> Unit
+) {
     val formatter = DecimalFormat("#,##0.00")
     val total = uiState.categorySpending.sumOf { it.amount.toDouble() }
+    val isHistorical = uiState.selectedCategoryMode == CategoryStatsMode.HISTORICAL_TOTAL
 
-    if (uiState.categorySpending.isEmpty()) {
-        EmptyStats()
-        return
-    }
-
-    LazyColumn(
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            DonutChart(
-                entries = uiState.categorySpending.map { spending ->
-                    DonutChartEntry(
-                        label = resolvedCategoryName(spending.categoryName, spending.categoryNameResKey),
-                        value = spending.amount.toFloat(),
-                        color = Color(spending.color)
-                    )
-                },
-                centerText = "${uiState.primaryCurrency.symbol}${formatter.format(total)}",
-                centerSubText = stringResource(R.string.home_per_month),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(220.dp)
+    Column {
+        // Mode toggle (当前每月 / 历史累计)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChip(
+                selected = !isHistorical,
+                onClick = { onModeChange(CategoryStatsMode.CURRENT_MONTHLY) },
+                label = { Text(stringResource(R.string.stats_mode_current)) }
+            )
+            FilterChip(
+                selected = isHistorical,
+                onClick = { onModeChange(CategoryStatsMode.HISTORICAL_TOTAL) },
+                label = { Text(stringResource(R.string.stats_mode_historical)) }
             )
         }
 
-        items(uiState.categorySpending) { spending ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Color dot
-                Canvas(modifier = Modifier.size(12.dp)) {
-                    drawCircle(Color(spending.color))
+        if (uiState.categorySpending.isEmpty()) {
+            EmptyStats()
+            return
+        }
+
+        LazyColumn(
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item {
+                DonutChart(
+                    entries = uiState.categorySpending.map { spending ->
+                        DonutChartEntry(
+                            label = resolvedCategoryName(spending.categoryName, spending.categoryNameResKey),
+                            value = spending.amount.toFloat(),
+                            color = Color(spending.color)
+                        )
+                    },
+                    centerText = "${uiState.primaryCurrency.symbol}${formatter.format(total)}",
+                    centerSubText = stringResource(
+                        if (isHistorical) R.string.stats_mode_historical
+                        else R.string.home_per_month
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp)
+                )
+            }
+
+            items(uiState.categorySpending) { spending ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Color dot
+                    Canvas(modifier = Modifier.size(12.dp)) {
+                        drawCircle(Color(spending.color))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = resolvedCategoryName(spending.categoryName, spending.categoryNameResKey),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = "${uiState.primaryCurrency.symbol}${formatter.format(spending.amount)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "${spending.percentage.toInt()}%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = resolvedCategoryName(spending.categoryName, spending.categoryNameResKey),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = "${uiState.primaryCurrency.symbol}${formatter.format(spending.amount)}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "${spending.percentage.toInt()}%",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }

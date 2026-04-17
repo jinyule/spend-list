@@ -8,6 +8,7 @@ import com.spendlist.app.domain.model.Currency
 import com.spendlist.app.domain.model.Subscription
 import com.spendlist.app.domain.model.SubscriptionStatus
 import com.spendlist.app.domain.repository.CategoryRepository
+import com.spendlist.app.domain.repository.SubscriptionRepository
 import com.spendlist.app.domain.usecase.currency.ConvertCurrencyUseCase
 import com.spendlist.app.domain.usecase.subscription.DeleteSubscriptionUseCase
 import com.spendlist.app.domain.usecase.subscription.GetSubscriptionsUseCase
@@ -31,6 +32,7 @@ data class HomeUiState(
     val primaryCurrency: Currency = Currency.CNY,
     val totalMonthlySpend: BigDecimal? = null,
     val totalSpent: BigDecimal? = null, // Cumulative spent
+    val expiredCount: Int = 0, // count of EXPIRED subscriptions across all categories/filters
     val isLoading: Boolean = true,
     val error: String? = null
 )
@@ -42,7 +44,8 @@ class HomeViewModel @Inject constructor(
     private val categoryRepository: CategoryRepository,
     private val convertCurrency: ConvertCurrencyUseCase,
     private val userPreferences: UserPreferences,
-    private val getTotalSpent: GetTotalSpentUseCase
+    private val getTotalSpent: GetTotalSpentUseCase,
+    private val subscriptionRepository: SubscriptionRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -93,8 +96,11 @@ class HomeViewModel @Inject constructor(
                     )
                 }
                 .collect { subscriptions ->
+                    val expiredCount = subscriptionRepository.getAllOnce()
+                        .count { it.status == SubscriptionStatus.EXPIRED }
                     _uiState.value = _uiState.value.copy(
                         subscriptions = subscriptions,
+                        expiredCount = expiredCount,
                         isLoading = false,
                         error = null
                     )
@@ -106,16 +112,6 @@ class HomeViewModel @Inject constructor(
     private fun calculateTotalSpend() {
         viewModelScope.launch {
             val state = _uiState.value
-            val activeSubscriptions = state.subscriptions.filter { it.status == SubscriptionStatus.ACTIVE }
-            if (activeSubscriptions.isEmpty()) {
-                _uiState.value = state.copy(
-                    totalMonthlySpend = BigDecimal.ZERO,
-                    totalSpent = BigDecimal.ZERO,
-                    convertedAmounts = emptyMap()
-                )
-                return@launch
-            }
-
             var totalMonthly = BigDecimal.ZERO
             val convertedAmounts = mutableMapOf<Long, BigDecimal>()
 
@@ -131,13 +127,15 @@ class HomeViewModel @Inject constructor(
                 }
                 convertedAmounts[sub.id] = convertedAmount
 
-                // Only add active subscriptions to total
+                // Monthly forecast reflects only currently-paying subscriptions.
                 if (sub.status == SubscriptionStatus.ACTIVE) {
                     totalMonthly = totalMonthly.add(convertedAmount)
                 }
             }
 
-            // Calculate cumulative spent
+            // Cumulative spent reflects historical actual spending across all
+            // statuses (GetTotalSpentUseCase handles the ACTIVE/EXPIRED/CANCELLED
+            // distinction internally via paidCycles()).
             val cumulativeSpent = getTotalSpent(state.primaryCurrency)
 
             _uiState.value = _uiState.value.copy(

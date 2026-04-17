@@ -296,8 +296,8 @@ private fun DetailContent(
             }
         }
 
-        // Action buttons
-        if (subscription.status == SubscriptionStatus.ACTIVE) {
+        // Action buttons (shown for ACTIVE and EXPIRED; hidden for CANCELLED terminal state)
+        if (subscription.status != SubscriptionStatus.CANCELLED) {
             Spacer(modifier = Modifier.height(24.dp))
 
             // Renew button

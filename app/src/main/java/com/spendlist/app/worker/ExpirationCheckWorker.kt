@@ -4,20 +4,24 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.spendlist.app.domain.usecase.renewal.AutoRenewSubscriptionsUseCase
+import com.spendlist.app.domain.usecase.renewal.MarkExpiredSubscriptionsUseCase
+import com.spendlist.app.notification.NotificationHelper
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 
 @HiltWorker
-class AutoRenewalWorker @AssistedInject constructor(
+class ExpirationCheckWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted workerParams: WorkerParameters,
-    private val autoRenewSubscriptions: AutoRenewSubscriptionsUseCase
+    private val markExpiredSubscriptions: MarkExpiredSubscriptionsUseCase
 ) : CoroutineWorker(appContext, workerParams) {
 
     override suspend fun doWork(): Result {
         return try {
-            autoRenewSubscriptions()
+            val newlyExpired = markExpiredSubscriptions()
+            if (newlyExpired.isNotEmpty()) {
+                NotificationHelper.sendExpirationNotification(applicationContext, newlyExpired)
+            }
             Result.success()
         } catch (e: Exception) {
             Result.retry()
@@ -25,6 +29,6 @@ class AutoRenewalWorker @AssistedInject constructor(
     }
 
     companion object {
-        const val WORK_NAME = "auto_renewal"
+        const val WORK_NAME = "expiration_check"
     }
 }

@@ -8,6 +8,7 @@ import com.spendlist.app.domain.model.Currency
 import com.spendlist.app.domain.model.Subscription
 import com.spendlist.app.domain.model.SubscriptionStatus
 import com.spendlist.app.domain.repository.CategoryRepository
+import com.spendlist.app.domain.repository.SubscriptionRepository
 import com.spendlist.app.domain.usecase.currency.ConvertCurrencyUseCase
 import com.spendlist.app.domain.usecase.subscription.DeleteSubscriptionUseCase
 import com.spendlist.app.domain.usecase.subscription.GetSubscriptionsUseCase
@@ -38,6 +39,7 @@ class HomeViewModelTest {
     private lateinit var convertCurrency: ConvertCurrencyUseCase
     private lateinit var userPreferences: UserPreferences
     private lateinit var getTotalSpent: GetTotalSpentUseCase
+    private lateinit var subscriptionRepository: SubscriptionRepository
     private lateinit var viewModel: HomeViewModel
 
     private val sampleSubscriptions = listOf(
@@ -66,9 +68,11 @@ class HomeViewModelTest {
         convertCurrency = mockk()
         userPreferences = mockk()
         getTotalSpent = mockk()
+        subscriptionRepository = mockk()
         every { categoryRepository.getAll() } returns flowOf(emptyList())
         every { userPreferences.primaryCurrencyCode } returns flowOf("CNY")
         coEvery { getTotalSpent(any()) } returns BigDecimal.ZERO
+        coEvery { subscriptionRepository.getAllOnce() } returns emptyList()
     }
 
     @After
@@ -80,7 +84,7 @@ class HomeViewModelTest {
         every { getSubscriptions(any(), any()) } returns flowOf(sampleSubscriptions)
         coEvery { convertCurrency(any(), any(), any()) } returns
             ConvertCurrencyUseCase.Result.Success(BigDecimal("145.00"))
-        return HomeViewModel(getSubscriptions, deleteSubscription, categoryRepository, convertCurrency, userPreferences, getTotalSpent)
+        return HomeViewModel(getSubscriptions, deleteSubscription, categoryRepository, convertCurrency, userPreferences, getTotalSpent, subscriptionRepository)
     }
 
     @Test
@@ -88,7 +92,7 @@ class HomeViewModelTest {
         every { getSubscriptions(any(), any()) } returns flowOf(emptyList())
         coEvery { convertCurrency(any(), any(), any()) } returns
             ConvertCurrencyUseCase.Result.Success(BigDecimal.ZERO)
-        viewModel = HomeViewModel(getSubscriptions, deleteSubscription, categoryRepository, convertCurrency, userPreferences, getTotalSpent)
+        viewModel = HomeViewModel(getSubscriptions, deleteSubscription, categoryRepository, convertCurrency, userPreferences, getTotalSpent, subscriptionRepository)
 
         // Before collection starts, isLoading is true
         assertThat(viewModel.uiState.value.isLoading).isTrue()
@@ -112,7 +116,7 @@ class HomeViewModelTest {
         every { getSubscriptions(any(), any()) } returns flowOf(emptyList())
         coEvery { convertCurrency(any(), any(), any()) } returns
             ConvertCurrencyUseCase.Result.Success(BigDecimal.ZERO)
-        viewModel = HomeViewModel(getSubscriptions, deleteSubscription, categoryRepository, convertCurrency, userPreferences, getTotalSpent)
+        viewModel = HomeViewModel(getSubscriptions, deleteSubscription, categoryRepository, convertCurrency, userPreferences, getTotalSpent, subscriptionRepository)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiState.test {
@@ -146,5 +150,30 @@ class HomeViewModelTest {
         assertThat(state.totalMonthlySpend).isNotNull()
         // 150 CNY (same currency) + 145 CNY (converted from 20 USD) = 295
         assertThat(state.totalMonthlySpend).isEqualTo(BigDecimal("295.00"))
+    }
+
+    @Test
+    fun onlyExpiredSubscriptions_totalSpentStillReflectsHistory() = runTest {
+        // Cumulative spent must not be wiped when no ACTIVE sub remains —
+        // the historical GetTotalSpentUseCase result should pass through.
+        val expiredOnly = listOf(
+            sampleSubscriptions[0].copy(status = SubscriptionStatus.EXPIRED),
+            sampleSubscriptions[1].copy(status = SubscriptionStatus.EXPIRED)
+        )
+        every { getSubscriptions(any(), any()) } returns flowOf(expiredOnly)
+        coEvery { convertCurrency(any(), any(), any()) } returns
+            ConvertCurrencyUseCase.Result.Success(BigDecimal("145.00"))
+        coEvery { getTotalSpent(any()) } returns BigDecimal("500.00")
+
+        viewModel = HomeViewModel(
+            getSubscriptions, deleteSubscription, categoryRepository,
+            convertCurrency, userPreferences, getTotalSpent, subscriptionRepository
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        // Monthly forecast = 0 (no ACTIVE) but cumulative preserves history
+        assertThat(state.totalMonthlySpend).isEqualTo(BigDecimal.ZERO)
+        assertThat(state.totalSpent).isEqualTo(BigDecimal("500.00"))
     }
 }

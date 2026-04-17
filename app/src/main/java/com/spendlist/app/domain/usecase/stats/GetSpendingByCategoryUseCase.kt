@@ -1,6 +1,7 @@
 package com.spendlist.app.domain.usecase.stats
 
 import com.spendlist.app.domain.model.Currency
+import com.spendlist.app.domain.model.Subscription
 import com.spendlist.app.domain.model.SubscriptionStatus
 import com.spendlist.app.domain.repository.CategoryRepository
 import com.spendlist.app.domain.repository.SubscriptionRepository
@@ -20,30 +21,49 @@ data class CategorySpending(
     val percentage: Float
 )
 
+/**
+ * Two visualization modes:
+ * - CURRENT_MONTHLY: "if all ACTIVE subscriptions continue, how much does each
+ *   category cost per month going forward" — a prediction.
+ * - HISTORICAL_TOTAL: "across all subscriptions (including EXPIRED/CANCELLED),
+ *   how much has each category cost cumulatively" — historical actual spending.
+ */
+enum class CategoryStatsMode { CURRENT_MONTHLY, HISTORICAL_TOTAL }
+
 class GetSpendingByCategoryUseCase @Inject constructor(
     private val subscriptionRepository: SubscriptionRepository,
     private val categoryRepository: CategoryRepository,
     private val convertCurrency: ConvertCurrencyUseCase
 ) {
-    operator fun invoke(targetCurrency: Currency): Flow<List<CategorySpending>> {
+    operator fun invoke(
+        targetCurrency: Currency,
+        mode: CategoryStatsMode = CategoryStatsMode.CURRENT_MONTHLY
+    ): Flow<List<CategorySpending>> {
         return combine(
             subscriptionRepository.getAll(),
             categoryRepository.getAll()
         ) { subscriptions, categories ->
-            val active = subscriptions.filter { it.status == SubscriptionStatus.ACTIVE }
-            if (active.isEmpty()) return@combine emptyList()
+            val relevant = when (mode) {
+                CategoryStatsMode.CURRENT_MONTHLY ->
+                    subscriptions.filter { it.status == SubscriptionStatus.ACTIVE }
+                CategoryStatsMode.HISTORICAL_TOTAL ->
+                    subscriptions.filter { it.paidCycles() > 0 }
+            }
+            if (relevant.isEmpty()) return@combine emptyList()
 
             val categoryMap = categories.associateBy { it.id }
 
-            // Group by category and sum monthly amounts
-            val grouped = active.groupBy { it.categoryId }
+            val grouped = relevant.groupBy { it.categoryId }
             val categoryAmounts = grouped.map { (catId, subs) ->
                 var total = BigDecimal.ZERO
                 for (sub in subs) {
-                    val monthly = sub.monthlyAmount
-                    val converted = when (val r = convertCurrency(monthly, sub.currency, targetCurrency)) {
+                    val baseAmount = when (mode) {
+                        CategoryStatsMode.CURRENT_MONTHLY -> sub.monthlyAmount
+                        CategoryStatsMode.HISTORICAL_TOTAL -> sub.totalPaidAmount
+                    }
+                    val converted = when (val r = convertCurrency(baseAmount, sub.currency, targetCurrency)) {
                         is ConvertCurrencyUseCase.Result.Success -> r.amount
-                        is ConvertCurrencyUseCase.Result.NoRateAvailable -> monthly
+                        is ConvertCurrencyUseCase.Result.NoRateAvailable -> baseAmount
                     }
                     total = total.add(converted)
                 }
