@@ -3,6 +3,7 @@ package com.spendlist.app.ui.screen.detail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.spendlist.app.data.datastore.UserPreferences
 import com.spendlist.app.domain.model.RenewalHistory
 import com.spendlist.app.domain.model.Subscription
 import com.spendlist.app.domain.model.SubscriptionStatus
@@ -36,7 +37,8 @@ class SubscriptionDetailViewModel @Inject constructor(
     private val updateSubscription: UpdateSubscriptionUseCase,
     private val deleteSubscription: DeleteSubscriptionUseCase,
     private val recordRenewal: RecordRenewalUseCase,
-    private val renewalHistoryRepository: RenewalHistoryRepository
+    private val renewalHistoryRepository: RenewalHistoryRepository,
+    private val userPreferences: UserPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DetailUiState())
@@ -60,6 +62,11 @@ class SubscriptionDetailViewModel @Inject constructor(
                 isLoading = false,
                 error = if (sub == null) "Subscription not found" else null
             )
+            // Viewing an expired subscription counts as "acknowledging" it;
+            // the home banner will hide until a fresh expiration appears.
+            if (sub?.status == SubscriptionStatus.EXPIRED) {
+                userPreferences.setExpiredBannerDismissedAt(System.currentTimeMillis())
+            }
         }
     }
 

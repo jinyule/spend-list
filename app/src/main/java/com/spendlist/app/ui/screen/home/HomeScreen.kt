@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -44,8 +45,8 @@ import com.spendlist.app.domain.model.SubscriptionStatus
 import com.spendlist.app.ui.component.DraggableFloatingActionButton
 import com.spendlist.app.ui.component.SubscriptionCard
 import com.spendlist.app.ui.component.resolvedCategoryName
+import com.spendlist.app.util.MoneyFormatter
 import java.math.BigDecimal
-import java.text.DecimalFormat
 
 @Composable
 fun HomeScreen(
@@ -153,7 +154,6 @@ private fun TotalSpendCard(
     modifier: Modifier = Modifier
 ) {
     val activeCount = subscriptions.count { it.status == SubscriptionStatus.ACTIVE }
-    val formatter = DecimalFormat("#,##0.00")
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -177,7 +177,7 @@ private fun TotalSpendCard(
                 Spacer(modifier = Modifier.height(4.dp))
                 if (totalMonthlySpend != null) {
                     Text(
-                        text = "${primaryCurrency.symbol}${formatter.format(totalMonthlySpend)}",
+                        text = MoneyFormatter.format(totalMonthlySpend, primaryCurrency),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -196,7 +196,7 @@ private fun TotalSpendCard(
                     .height(60.dp)
                     .width(1.dp)
                     .padding(vertical = 8.dp)
-                    .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f))
+                    .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.4f))
             )
 
             // Cumulative spend
@@ -209,7 +209,7 @@ private fun TotalSpendCard(
                 Spacer(modifier = Modifier.height(4.dp))
                 if (totalSpent != null) {
                     Text(
-                        text = "${primaryCurrency.symbol}${formatter.format(totalSpent)}",
+                        text = MoneyFormatter.format(totalSpent, primaryCurrency),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -309,7 +309,13 @@ private fun ExpiredBanner(
                 text = stringResource(R.string.home_expired_banner, count),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onErrorContainer
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.weight(1f)
+            )
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onErrorContainer
             )
         }
     }

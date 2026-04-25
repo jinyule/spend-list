@@ -121,6 +121,12 @@
     <string name="stats_tab_compare">Compare</string>
     <string name="stats_mode_current">Current Monthly</string>
     <string name="stats_mode_historical">Historical Total</string>
+    <string name="stats_empty_category">No category data yet</string>
+    <string name="stats_empty_trend">No spending in the past 12 months</string>
+    <string name="stats_empty_compare">Add subscriptions to compare categories</string>
+    <string name="action_renew_hint">Catches up 1 cycle (%s)</string>
+    <string name="field_next_renewal_hint">Auto-calculated from start date and billing cycle</string>
+    <string name="field_next_renewal_hint_edit">Tap calendar to adjust manually</string>
 
     <!-- Notifications -->
     <string name="notification_channel_name">Renewal Reminders</string>
@@ -147,6 +153,7 @@
 
     <!-- Renewal -->
     <string name="settings_import_success">Successfully imported %d subscriptions</string>
+    <string name="settings_import_partial">Imported %1$d · %2$d failed</string>
     <string name="settings_import_error">Import failed: %s</string>
     <string name="action_renew">Renew</string>
     <string name="renewal_history">Renewal History</string>

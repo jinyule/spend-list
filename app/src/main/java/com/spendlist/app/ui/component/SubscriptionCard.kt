@@ -4,10 +4,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -28,9 +32,9 @@ import com.spendlist.app.domain.model.Currency
 import com.spendlist.app.domain.model.Subscription
 import com.spendlist.app.domain.model.SubscriptionStatus
 import com.spendlist.app.ui.theme.StatusColors
+import com.spendlist.app.util.DateFormatter
+import com.spendlist.app.util.MoneyFormatter
 import java.math.BigDecimal
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 
 @Composable
 fun SubscriptionCard(
@@ -48,10 +52,27 @@ fun SubscriptionCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .height(IntrinsicSize.Min)
         ) {
+            // Left accent bar — highlights EXPIRED subscriptions in the list.
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .fillMaxHeight()
+                    .background(
+                        if (subscription.status == SubscriptionStatus.EXPIRED)
+                            MaterialTheme.colorScheme.error
+                        else
+                            Color.Transparent
+                    )
+            )
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
             // Icon placeholder
             Box(
                 modifier = Modifier
@@ -98,11 +119,12 @@ fun SubscriptionCard(
                     formatCycleSuffix(subscription.billingCycle)
                 }
                 Text(
-                    text = "${displayCurrency.symbol}${formatAmount(displayAmount)}$suffix",
+                    text = "${MoneyFormatter.format(displayAmount, displayCurrency)}$suffix",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 StatusBadge(subscription.status)
+            }
             }
         }
     }
@@ -132,8 +154,7 @@ private fun StatusBadge(status: SubscriptionStatus) {
 }
 
 private fun formatRenewalDate(subscription: Subscription): String {
-    val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-    return subscription.nextRenewalDate.format(formatter)
+    return DateFormatter.format(subscription.nextRenewalDate)
 }
 
 @Composable
@@ -146,7 +167,3 @@ private fun formatCycleSuffix(cycle: BillingCycle): String {
     }
 }
 
-private fun formatAmount(amount: BigDecimal): String {
-    return if (amount.scale() <= 2) amount.toPlainString()
-    else amount.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString()
-}

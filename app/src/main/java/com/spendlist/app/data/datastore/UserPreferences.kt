@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import kotlinx.coroutines.flow.Flow
@@ -22,6 +23,7 @@ class UserPreferences @Inject constructor(
         val THEME_MODE = intPreferencesKey("theme_mode") // 0=System, 1=Light, 2=Dark
         val REMINDER_DAYS = stringSetPreferencesKey("reminder_days") // {"3", "1", "0"}
         val LANGUAGE_CODE = stringPreferencesKey("language_code") // "" = System, "en", "zh-CN"
+        val EXPIRED_BANNER_DISMISSED_AT = longPreferencesKey("expired_banner_dismissed_at")
     }
 
     val primaryCurrencyCode: Flow<String> = dataStore.data.map { prefs ->
@@ -42,6 +44,10 @@ class UserPreferences @Inject constructor(
 
     val languageCode: Flow<String> = dataStore.data.map { prefs ->
         prefs[LANGUAGE_CODE] ?: ""
+    }
+
+    val expiredBannerDismissedAt: Flow<Long> = dataStore.data.map { prefs ->
+        prefs[EXPIRED_BANNER_DISMISSED_AT] ?: 0L
     }
 
     suspend fun setPrimaryCurrency(code: String) {
@@ -71,6 +77,12 @@ class UserPreferences @Inject constructor(
     suspend fun setLanguageCode(code: String) {
         dataStore.edit { prefs ->
             prefs[LANGUAGE_CODE] = code
+        }
+    }
+
+    suspend fun setExpiredBannerDismissedAt(timestamp: Long) {
+        dataStore.edit { prefs ->
+            prefs[EXPIRED_BANNER_DISMISSED_AT] = timestamp
         }
     }
 }

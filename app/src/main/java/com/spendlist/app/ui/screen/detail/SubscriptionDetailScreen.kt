@@ -20,8 +20,10 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -54,7 +56,8 @@ import com.spendlist.app.domain.model.BillingCycle
 import com.spendlist.app.domain.model.RenewalHistory
 import com.spendlist.app.domain.model.Subscription
 import com.spendlist.app.domain.model.SubscriptionStatus
-import java.time.format.DateTimeFormatter
+import com.spendlist.app.util.DateFormatter
+import com.spendlist.app.util.MoneyFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -152,7 +155,6 @@ private fun DetailContent(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
 
     Column(
         modifier = modifier
@@ -198,12 +200,12 @@ private fun DetailContent(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 DetailRow(
                     label = stringResource(R.string.field_start_date),
-                    value = subscription.startDate.toString()
+                    value = DateFormatter.format(subscription.startDate)
                 )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 DetailRow(
                     label = stringResource(R.string.field_next_renewal),
-                    value = subscription.nextRenewalDate.toString()
+                    value = DateFormatter.format(subscription.nextRenewalDate)
                 )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -286,8 +288,8 @@ private fun DetailContent(
                         Text(
                             text = stringResource(
                                 R.string.renewal_date_change,
-                                history.previousRenewalDate.format(dateFormatter),
-                                history.newRenewalDate.format(dateFormatter)
+                                DateFormatter.format(history.previousRenewalDate),
+                                DateFormatter.format(history.newRenewalDate)
                             ),
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -300,10 +302,16 @@ private fun DetailContent(
         if (subscription.status != SubscriptionStatus.CANCELLED) {
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Renew button
+            val isExpired = subscription.status == SubscriptionStatus.EXPIRED
+
+            // Renew button — taller when EXPIRED to foreground the primary CTA
             Button(
                 onClick = onRenew,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = if (isExpired)
+                    PaddingValues(vertical = 16.dp, horizontal = 24.dp)
+                else
+                    ButtonDefaults.ContentPadding
             ) {
                 Icon(
                     Icons.Default.Refresh,
@@ -312,6 +320,18 @@ private fun DetailContent(
                 )
                 Spacer(modifier = Modifier.size(8.dp))
                 Text(stringResource(R.string.action_renew))
+            }
+
+            if (isExpired) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stringResource(
+                        R.string.action_renew_hint,
+                        MoneyFormatter.format(subscription.amount, subscription.currency)
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))

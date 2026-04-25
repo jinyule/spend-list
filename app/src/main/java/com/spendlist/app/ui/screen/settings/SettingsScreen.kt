@@ -355,8 +355,14 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(8.dp))
             val isSuccess = uiState.importMessage!!.startsWith("import_success")
             val messageText = if (isSuccess) {
-                val count = uiState.importMessage!!.substringAfter(":").toIntOrNull() ?: 0
-                stringResource(R.string.settings_import_success, count)
+                val parts = uiState.importMessage!!.substringAfter(":").split(":")
+                val inserted = parts.getOrNull(0)?.toIntOrNull() ?: 0
+                val failed = parts.getOrNull(1)?.toIntOrNull() ?: 0
+                if (failed > 0) {
+                    stringResource(R.string.settings_import_partial, inserted, failed)
+                } else {
+                    stringResource(R.string.settings_import_success, inserted)
+                }
             } else {
                 val error = uiState.importMessage!!.substringAfter(":")
                 stringResource(R.string.settings_import_error, error)

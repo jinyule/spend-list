@@ -14,52 +14,61 @@ class ImportDataUseCase @Inject constructor(
     private val repository: SubscriptionRepository
 ) {
     sealed class Result {
-        data class Success(val count: Int) : Result()
+        data class Success(val inserted: Int, val failed: Int = 0) : Result()
         data class Error(val message: String) : Result()
     }
 
     private val json = Json { ignoreUnknownKeys = true }
 
     suspend fun importJson(jsonString: String): Result {
-        return try {
-            val dtos = json.decodeFromString<List<SubscriptionExportDto>>(jsonString)
-            var count = 0
-            for (dto in dtos) {
-                val sub = dto.toDomain()
-                repository.insert(sub)
-                count++
-            }
-            Result.Success(count)
+        val dtos = try {
+            json.decodeFromString<List<SubscriptionExportDto>>(jsonString)
         } catch (e: Exception) {
-            Result.Error(e.message ?: "Invalid JSON format")
+            return Result.Error(e.message ?: "Invalid JSON format")
         }
+        var inserted = 0
+        var failed = 0
+        for (dto in dtos) {
+            try {
+                repository.insert(dto.toDomain())
+                inserted++
+            } catch (e: Exception) {
+                failed++
+            }
+        }
+        return Result.Success(inserted, failed)
     }
 
     suspend fun importCsv(csvString: String): Result {
-        return try {
-            val lines = csvString.lines().filter { it.isNotBlank() }
-            if (lines.isEmpty()) return Result.Error("Empty file")
-            if (lines.size == 1) return Result.Success(0) // header only
+        val lines = csvString.lines().filter { it.isNotBlank() }
+        if (lines.isEmpty()) return Result.Error("Empty file")
+        if (lines.size == 1) return Result.Success(0) // header only
 
-            val header = lines[0].split(",").map { it.trim() }
-            val nameIdx = header.indexOf("name")
-            val amountIdx = header.indexOf("amount")
-            val currencyIdx = header.indexOf("currency")
-            val cycleTypeIdx = header.indexOf("billingCycleType")
-            val billingDayIdx = header.indexOf("billingDayOfMonth")
-            val startDateIdx = header.indexOf("startDate")
-            val nextRenewalIdx = header.indexOf("nextRenewalDate")
-            val statusIdx = header.indexOf("status")
-            val noteIdx = header.indexOf("note")
-            val manageUrlIdx = header.indexOf("manageUrl")
-            val categoryIdIdx = header.indexOf("categoryId")
+        val header = try {
+            lines[0].split(",").map { it.trim() }
+        } catch (e: Exception) {
+            return Result.Error(e.message ?: "Invalid CSV format")
+        }
+        val nameIdx = header.indexOf("name")
+        val amountIdx = header.indexOf("amount")
+        val currencyIdx = header.indexOf("currency")
+        val cycleTypeIdx = header.indexOf("billingCycleType")
+        val billingDayIdx = header.indexOf("billingDayOfMonth")
+        val startDateIdx = header.indexOf("startDate")
+        val nextRenewalIdx = header.indexOf("nextRenewalDate")
+        val statusIdx = header.indexOf("status")
+        val noteIdx = header.indexOf("note")
+        val manageUrlIdx = header.indexOf("manageUrl")
+        val categoryIdIdx = header.indexOf("categoryId")
 
-            if (nameIdx == -1 || amountIdx == -1) {
-                return Result.Error("Missing required columns: name, amount")
-            }
+        if (nameIdx == -1 || amountIdx == -1) {
+            return Result.Error("Missing required columns: name, amount")
+        }
 
-            var count = 0
-            for (i in 1 until lines.size) {
+        var inserted = 0
+        var failed = 0
+        for (i in 1 until lines.size) {
+            try {
                 val cols = parseCsvLine(lines[i])
                 val dto = SubscriptionExportDto(
                     name = cols.getOrElse(nameIdx) { "" },
@@ -75,12 +84,12 @@ class ImportDataUseCase @Inject constructor(
                     manageUrl = manageUrlIdx.takeIf { it >= 0 }?.let { cols.getOrElse(it) { "" }.ifBlank { null } }
                 )
                 repository.insert(dto.toDomain())
-                count++
+                inserted++
+            } catch (e: Exception) {
+                failed++
             }
-            Result.Success(count)
-        } catch (e: Exception) {
-            Result.Error(e.message ?: "Invalid CSV format")
         }
+        return Result.Success(inserted, failed)
     }
 
     private fun parseCsvLine(line: String): List<String> {

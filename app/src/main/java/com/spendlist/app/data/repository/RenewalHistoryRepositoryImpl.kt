@@ -6,6 +6,9 @@ import com.spendlist.app.domain.model.RenewalHistory
 import com.spendlist.app.domain.repository.RenewalHistoryRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,6 +23,11 @@ class RenewalHistoryRepositoryImpl @Inject constructor(
 
     override suspend fun getCountBySubscriptionId(subscriptionId: Long): Int {
         return dao.getCountBySubscriptionId(subscriptionId)
+    }
+
+    override suspend fun getLatestNewRenewalDate(subscriptionId: Long): LocalDate? {
+        val millis = dao.getMaxNewRenewalDateMillis(subscriptionId) ?: return null
+        return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
     }
 
     override suspend fun insert(history: RenewalHistory): Long {

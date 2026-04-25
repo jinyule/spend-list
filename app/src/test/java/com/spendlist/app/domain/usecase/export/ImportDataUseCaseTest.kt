@@ -41,7 +41,7 @@ class ImportDataUseCaseTest {
         val result = useCase.importJson(json)
 
         assertThat(result).isInstanceOf(ImportDataUseCase.Result.Success::class.java)
-        assertThat((result as ImportDataUseCase.Result.Success).count).isEqualTo(1)
+        assertThat((result as ImportDataUseCase.Result.Success).inserted).isEqualTo(1)
         coVerify(exactly = 1) { repository.insert(any()) }
     }
 
@@ -59,7 +59,7 @@ class ImportDataUseCaseTest {
         val result = useCase.importJson(json)
 
         assertThat(result).isInstanceOf(ImportDataUseCase.Result.Success::class.java)
-        assertThat((result as ImportDataUseCase.Result.Success).count).isEqualTo(2)
+        assertThat((result as ImportDataUseCase.Result.Success).inserted).isEqualTo(2)
     }
 
     @Test
@@ -81,7 +81,7 @@ class ImportDataUseCaseTest {
         val result = useCase.importCsv(csv)
 
         assertThat(result).isInstanceOf(ImportDataUseCase.Result.Success::class.java)
-        assertThat((result as ImportDataUseCase.Result.Success).count).isEqualTo(1)
+        assertThat((result as ImportDataUseCase.Result.Success).inserted).isEqualTo(1)
     }
 
     @Test
@@ -91,7 +91,7 @@ class ImportDataUseCaseTest {
         val result = useCase.importCsv(csv)
 
         assertThat(result).isInstanceOf(ImportDataUseCase.Result.Success::class.java)
-        assertThat((result as ImportDataUseCase.Result.Success).count).isEqualTo(0)
+        assertThat((result as ImportDataUseCase.Result.Success).inserted).isEqualTo(0)
     }
 
     @Test

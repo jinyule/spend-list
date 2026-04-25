@@ -1,5 +1,12 @@
 package com.spendlist.app.ui.screen.stats
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,7 +25,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.spendlist.app.R
 import com.spendlist.app.domain.usecase.stats.CategoryStatsMode
 import com.spendlist.app.ui.component.*
-import java.text.DecimalFormat
+import com.spendlist.app.util.MoneyFormatter
+import java.math.BigDecimal
 
 @Composable
 private fun resolvedCategoryName(name: String, nameResKey: String?): String {
@@ -65,12 +73,41 @@ fun StatsScreen(
                 CircularProgressIndicator()
             }
         } else {
-            when (selectedTab) {
-                0 -> CategoryTab(uiState, onModeChange = viewModel::onCategoryModeChanged)
-                1 -> TrendTab(uiState)
-                2 -> CompareTab(uiState)
+            AnimatedContent(
+                targetState = selectedTab,
+                transitionSpec = {
+                    val forward = targetState > initialState
+                    val slideIn = slideInHorizontally(animationSpec = tween(250)) { width ->
+                        if (forward) width else -width
+                    }
+                    val slideOut = slideOutHorizontally(animationSpec = tween(250)) { width ->
+                        if (forward) -width else width
+                    }
+                    (fadeIn(tween(250)) + slideIn) togetherWith (fadeOut(tween(250)) + slideOut)
+                },
+                label = "stats_tab_transition"
+            ) { tab ->
+                when (tab) {
+                    0 -> CategoryTab(uiState, onModeChange = viewModel::onCategoryModeChanged)
+                    1 -> TrendTab(uiState)
+                    2 -> CompareTab(uiState)
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun EmptyStats(messageResId: Int) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = stringResource(messageResId),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -79,32 +116,30 @@ private fun CategoryTab(
     uiState: StatsUiState,
     onModeChange: (CategoryStatsMode) -> Unit
 ) {
-    val formatter = DecimalFormat("#,##0.00")
-    val total = uiState.categorySpending.sumOf { it.amount.toDouble() }
+    val total = uiState.categorySpending.fold(BigDecimal.ZERO) { acc, s -> acc.add(s.amount) }
     val isHistorical = uiState.selectedCategoryMode == CategoryStatsMode.HISTORICAL_TOTAL
 
     Column {
         // Mode toggle (当前每月 / 历史累计)
-        Row(
+        SingleChoiceSegmentedButtonRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            FilterChip(
+            SegmentedButton(
                 selected = !isHistorical,
                 onClick = { onModeChange(CategoryStatsMode.CURRENT_MONTHLY) },
-                label = { Text(stringResource(R.string.stats_mode_current)) }
-            )
-            FilterChip(
+                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+            ) { Text(stringResource(R.string.stats_mode_current)) }
+            SegmentedButton(
                 selected = isHistorical,
                 onClick = { onModeChange(CategoryStatsMode.HISTORICAL_TOTAL) },
-                label = { Text(stringResource(R.string.stats_mode_historical)) }
-            )
+                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+            ) { Text(stringResource(R.string.stats_mode_historical)) }
         }
 
         if (uiState.categorySpending.isEmpty()) {
-            EmptyStats()
+            EmptyStats(R.string.stats_empty_category)
             return
         }
 
@@ -121,7 +156,7 @@ private fun CategoryTab(
                             color = Color(spending.color)
                         )
                     },
-                    centerText = "${uiState.primaryCurrency.symbol}${formatter.format(total)}",
+                    centerText = MoneyFormatter.format(total, uiState.primaryCurrency),
                     centerSubText = stringResource(
                         if (isHistorical) R.string.stats_mode_historical
                         else R.string.home_per_month
@@ -148,7 +183,7 @@ private fun CategoryTab(
                         modifier = Modifier.weight(1f)
                     )
                     Text(
-                        text = "${uiState.primaryCurrency.symbol}${formatter.format(spending.amount)}",
+                        text = MoneyFormatter.format(spending.amount, uiState.primaryCurrency),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -167,7 +202,7 @@ private fun CategoryTab(
 @Composable
 private fun TrendTab(uiState: StatsUiState) {
     if (uiState.monthlyTrend.isEmpty()) {
-        EmptyStats()
+        EmptyStats(R.string.stats_empty_trend)
         return
     }
 
@@ -192,7 +227,7 @@ private fun TrendTab(uiState: StatsUiState) {
 @Composable
 private fun CompareTab(uiState: StatsUiState) {
     if (uiState.categorySpending.isEmpty()) {
-        EmptyStats()
+        EmptyStats(R.string.stats_empty_compare)
         return
     }
 
@@ -211,20 +246,6 @@ private fun CompareTab(uiState: StatsUiState) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(240.dp)
-        )
-    }
-}
-
-@Composable
-private fun EmptyStats() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = stringResource(R.string.home_empty_title),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

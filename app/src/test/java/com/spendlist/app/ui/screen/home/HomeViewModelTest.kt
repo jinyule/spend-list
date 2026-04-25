@@ -71,6 +71,7 @@ class HomeViewModelTest {
         subscriptionRepository = mockk()
         every { categoryRepository.getAll() } returns flowOf(emptyList())
         every { userPreferences.primaryCurrencyCode } returns flowOf("CNY")
+        every { userPreferences.expiredBannerDismissedAt } returns flowOf(0L)
         coEvery { getTotalSpent(any()) } returns BigDecimal.ZERO
         coEvery { subscriptionRepository.getAllOnce() } returns emptyList()
     }
@@ -150,6 +151,51 @@ class HomeViewModelTest {
         assertThat(state.totalMonthlySpend).isNotNull()
         // 150 CNY (same currency) + 145 CNY (converted from 20 USD) = 295
         assertThat(state.totalMonthlySpend).isEqualTo(BigDecimal("295.00"))
+    }
+
+    @Test
+    fun expiredCount_excludesSubscriptionsDismissedBeforeCurrentExpiration() = runTest {
+        // User has viewed the expired subscriptions already (dismissedAt = T2).
+        // Any EXPIRED sub whose updatedAt <= dismissedAt must not contribute to expiredCount.
+        val expiredOld = sampleSubscriptions[0].copy(
+            status = SubscriptionStatus.EXPIRED,
+            updatedAt = 1_000L
+        )
+        every { getSubscriptions(any(), any()) } returns flowOf(listOf(expiredOld))
+        coEvery { convertCurrency(any(), any(), any()) } returns
+            ConvertCurrencyUseCase.Result.Success(BigDecimal("145.00"))
+        coEvery { subscriptionRepository.getAllOnce() } returns listOf(expiredOld)
+        every { userPreferences.expiredBannerDismissedAt } returns flowOf(2_000L)
+
+        viewModel = HomeViewModel(
+            getSubscriptions, deleteSubscription, categoryRepository,
+            convertCurrency, userPreferences, getTotalSpent, subscriptionRepository
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.expiredCount).isEqualTo(0)
+    }
+
+    @Test
+    fun expiredCount_includesSubscriptionsExpiredAfterDismiss() = runTest {
+        // A fresh expiration (updatedAt > dismissedAt) must reappear in expiredCount.
+        val freshlyExpired = sampleSubscriptions[0].copy(
+            status = SubscriptionStatus.EXPIRED,
+            updatedAt = 5_000L
+        )
+        every { getSubscriptions(any(), any()) } returns flowOf(listOf(freshlyExpired))
+        coEvery { convertCurrency(any(), any(), any()) } returns
+            ConvertCurrencyUseCase.Result.Success(BigDecimal("145.00"))
+        coEvery { subscriptionRepository.getAllOnce() } returns listOf(freshlyExpired)
+        every { userPreferences.expiredBannerDismissedAt } returns flowOf(2_000L)
+
+        viewModel = HomeViewModel(
+            getSubscriptions, deleteSubscription, categoryRepository,
+            convertCurrency, userPreferences, getTotalSpent, subscriptionRepository
+        )
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.expiredCount).isEqualTo(1)
     }
 
     @Test

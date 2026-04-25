@@ -132,7 +132,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = importDataUseCase.importJson(jsonString)) {
                 is ImportDataUseCase.Result.Success ->
-                    _uiState.value = _uiState.value.copy(importMessage = "import_success:${result.count}")
+                    _uiState.value = _uiState.value.copy(importMessage = "import_success:${result.inserted}:${result.failed}")
                 is ImportDataUseCase.Result.Error ->
                     _uiState.value = _uiState.value.copy(importMessage = "import_error:${result.message}")
             }
@@ -143,7 +143,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = importDataUseCase.importCsv(csvString)) {
                 is ImportDataUseCase.Result.Success ->
-                    _uiState.value = _uiState.value.copy(importMessage = "import_success:${result.count}")
+                    _uiState.value = _uiState.value.copy(importMessage = "import_success:${result.inserted}:${result.failed}")
                 is ImportDataUseCase.Result.Error ->
                     _uiState.value = _uiState.value.copy(importMessage = "import_error:${result.message}")
             }

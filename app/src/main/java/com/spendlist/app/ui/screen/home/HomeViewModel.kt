@@ -54,10 +54,14 @@ class HomeViewModel @Inject constructor(
     private var loadJob: Job? = null
     private var currencyJob: Job? = null
     private var categoryJob: Job? = null
+    private var bannerDismissJob: Job? = null
+
+    private var expiredBannerDismissedAt: Long = 0L
 
     init {
         loadPrimaryCurrency()
         loadCategories()
+        loadExpiredBannerDismissedAt()
         loadSubscriptions()
     }
 
@@ -82,6 +86,25 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    private fun loadExpiredBannerDismissedAt() {
+        bannerDismissJob?.cancel()
+        bannerDismissJob = viewModelScope.launch {
+            userPreferences.expiredBannerDismissedAt.collect { ts ->
+                expiredBannerDismissedAt = ts
+                // Recompute the banner count whenever the dismiss timestamp moves.
+                refreshExpiredCount()
+            }
+        }
+    }
+
+    private suspend fun refreshExpiredCount() {
+        val newCount = subscriptionRepository.getAllOnce()
+            .count { it.status == SubscriptionStatus.EXPIRED && it.updatedAt > expiredBannerDismissedAt }
+        if (newCount != _uiState.value.expiredCount) {
+            _uiState.value = _uiState.value.copy(expiredCount = newCount)
+        }
+    }
+
     private fun loadSubscriptions() {
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
@@ -97,7 +120,7 @@ class HomeViewModel @Inject constructor(
                 }
                 .collect { subscriptions ->
                     val expiredCount = subscriptionRepository.getAllOnce()
-                        .count { it.status == SubscriptionStatus.EXPIRED }
+                        .count { it.status == SubscriptionStatus.EXPIRED && it.updatedAt > expiredBannerDismissedAt }
                     _uiState.value = _uiState.value.copy(
                         subscriptions = subscriptions,
                         expiredCount = expiredCount,

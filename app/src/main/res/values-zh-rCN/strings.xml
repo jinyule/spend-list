@@ -121,6 +121,12 @@
     <string name="stats_tab_compare">分类对比</string>
     <string name="stats_mode_current">当前每月</string>
     <string name="stats_mode_historical">历史累计</string>
+    <string name="stats_empty_category">暂无分类数据</string>
+    <string name="stats_empty_trend">过去 12 个月暂无支出</string>
+    <string name="stats_empty_compare">添加订阅后可对比各分类</string>
+    <string name="action_renew_hint">补缴 1 个周期 (%s)</string>
+    <string name="field_next_renewal_hint">根据开始日期和计费周期自动计算</string>
+    <string name="field_next_renewal_hint_edit">点击日历图标可手动调整</string>
 
     <!-- Notifications -->
     <string name="notification_channel_name">续费提醒</string>
@@ -147,6 +153,7 @@
 
     <!-- Renewal -->
     <string name="settings_import_success">成功导入 %d 条订阅</string>
+    <string name="settings_import_partial">成功 %1$d 条 · 失败 %2$d 条</string>
     <string name="settings_import_error">导入失败：%s</string>
     <string name="action_renew">续约</string>
     <string name="renewal_history">续约记录</string>

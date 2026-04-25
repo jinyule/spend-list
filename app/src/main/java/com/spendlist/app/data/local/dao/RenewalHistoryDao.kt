@@ -15,6 +15,9 @@ interface RenewalHistoryDao {
     @Query("SELECT COUNT(*) FROM renewal_history WHERE subscription_id = :subscriptionId")
     suspend fun getCountBySubscriptionId(subscriptionId: Long): Int
 
+    @Query("SELECT MAX(new_renewal_date) FROM renewal_history WHERE subscription_id = :subscriptionId")
+    suspend fun getMaxNewRenewalDateMillis(subscriptionId: Long): Long?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(history: RenewalHistoryEntity): Long
 

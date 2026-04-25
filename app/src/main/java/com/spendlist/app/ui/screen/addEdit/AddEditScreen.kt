@@ -57,10 +57,10 @@ import com.spendlist.app.domain.model.Category
 import com.spendlist.app.domain.model.Currency
 import com.spendlist.app.ui.component.getIconByName
 import com.spendlist.app.ui.component.resolvedCategoryName
+import com.spendlist.app.util.DateFormatter
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -70,6 +70,7 @@ fun AddEditScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showDatePicker by remember { mutableStateOf(false) }
+    var showNextRenewalDatePicker by remember { mutableStateOf(false) }
     var showIconPicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -213,7 +214,7 @@ fun AddEditScreen(
 
             // Start Date with DatePicker
             OutlinedTextField(
-                value = uiState.startDate.format(DateTimeFormatter.ISO_LOCAL_DATE),
+                value = DateFormatter.format(uiState.startDate),
                 onValueChange = {},
                 label = { Text(stringResource(R.string.field_start_date)) },
                 readOnly = true,
@@ -226,11 +227,26 @@ fun AddEditScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Next Renewal Date (auto-calculated)
+            // Next Renewal Date — auto-calculated for new subs, manually adjustable in edit mode
             OutlinedTextField(
-                value = uiState.nextRenewalDate.format(DateTimeFormatter.ISO_LOCAL_DATE),
+                value = DateFormatter.format(uiState.nextRenewalDate),
                 onValueChange = {},
                 label = { Text(stringResource(R.string.field_next_renewal)) },
+                supportingText = {
+                    Text(
+                        stringResource(
+                            if (uiState.isEditMode) R.string.field_next_renewal_hint_edit
+                            else R.string.field_next_renewal_hint
+                        )
+                    )
+                },
+                trailingIcon = if (uiState.isEditMode) {
+                    {
+                        IconButton(onClick = { showNextRenewalDatePicker = true }) {
+                            Icon(Icons.Default.CalendarMonth, contentDescription = "Select next renewal date")
+                        }
+                    }
+                } else null,
                 readOnly = true,
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
@@ -267,6 +283,41 @@ fun AddEditScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // Next Renewal DatePicker (edit mode only)
+        if (showNextRenewalDatePicker) {
+            val nextRenewalPickerState = rememberDatePickerState(
+                initialSelectedDateMillis = uiState.nextRenewalDate
+                    .atStartOfDay(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli()
+            )
+            DatePickerDialog(
+                onDismissRequest = { showNextRenewalDatePicker = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            nextRenewalPickerState.selectedDateMillis?.let { millis ->
+                                val date = Instant.ofEpochMilli(millis)
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate()
+                                viewModel.onNextRenewalDateChange(date)
+                            }
+                            showNextRenewalDatePicker = false
+                        }
+                    ) {
+                        Text(stringResource(R.string.action_confirm))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showNextRenewalDatePicker = false }) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
+                }
+            ) {
+                DatePicker(state = nextRenewalPickerState)
+            }
         }
 
         // DatePicker Dialog
